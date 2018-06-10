@@ -45,7 +45,7 @@ endif()
 # XXX: nxxm cannot ship this for the moment. An option would be to ship it with nxxm until headerizer is finished.
 add_definitions(-DBOOST_ERROR_CODE_HEADER_ONLY)
 find_package(Threads REQUIRED)
-find_package(OpenSSL)
+find_package(OpenSSL REQUIRED)
 
 {{#deps}}
 # {{name}}

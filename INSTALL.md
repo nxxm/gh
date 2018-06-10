@@ -1,5 +1,5 @@
 
-# Installing daminetreg::octoxxit
+# Installing nxxm::octoxxit
 octoxxit can be installed in three ways :
 
 * [Copy paste in your project](#copy-paste-in-your-project)
@@ -93,7 +93,7 @@ You can tweak destination with `-DCMAKE_INSTALL_PREFIX=/install/path` to change 
 ```cmake
 find_package(octoxxit REQUIRED)
 add_executable(app your_code.cpp)
-target_link_libraries(app daminetreg::octoxxit)
+target_link_libraries(app nxxm::octoxxit)
 ```
 
 ## If you don't use CMake : 

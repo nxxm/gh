@@ -9,21 +9,21 @@
 # syntax here : http://mustache.github.io/mustache.5.html 
 #
 # You can access the following variables : 
-# * daminetreg : github organization name
+# * nxxm : github organization name
 # * octoxxit : current project name
 # * . : current project srcs folder.
 #
 # *                                                                  : all deps direct and transitive 
-#   -  : The cmake package name from the cmake_package_map otherwise: daminetreg
+#   -  : The cmake package name from the cmake_package_map otherwise: nxxm
 #   -  : The cmake target name from cmake_package_map otherwise: ::
-#   - daminetreg : the github organization name
+#   - nxxm : the github organization name
 #   -  : the dependency repository name
 #   -  : tag or branch wished for the dep
 #   -  : the path you specified in deps/inglued -I
 #   -  : same as above but with a guaranteed end slash.
 #
 
-cmake_minimum_required(VERSION 3.7.2)
+cmake_minimum_required(VERSION 3.5.0)
 
 project(octoxxit VERSION "0.0.1")
 enable_testing()
@@ -503,7 +503,7 @@ endif()
 # Define header only library
 include_directories(BEFORE ${CMAKE_CURRENT_LIST_DIR})
 add_library(octoxxit INTERFACE)
-add_library(daminetreg::octoxxit ALIAS octoxxit)
+add_library(nxxm::octoxxit ALIAS octoxxit)
 
 target_link_libraries(octoxxit INTERFACE ${OPENSSL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 

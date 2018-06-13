@@ -1,251 +1,154 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
+#include <list>
 #include <nlohmann/json.hpp>
+#include <pre/json/from_json.hpp>
+#include <boost/fusion/include/adapt_struct.hpp>
 
-//TODO: Implement RAW http client here
+#include <octoxxit/detail/http.hxx>
 //TODO: implement returning the json
 //TODO: refactor beast backend into xxhr
 
 
-namespace octoxxit {
+namespace gh {
+
+  /**
+   * \brief Repository owner, typically a github user or organization.
+   */ 
+  struct owner {
+    uint64_t id;
+    std::string login;
+    bool site_admin{};
+    std::string type;
+    std::string avatar_url;
+    std::string events_url;
+    std::string followers_url;
+    std::string following_url;
+    std::string gists_url;
+    std::string gravatar_id;
+    std::string html_url;
+    std::string node_id;
+    std::string organizations_url;
+    std::string received_events_url;
+    std::string repos_url;
+    std::string starred_url;
+    std::string subscriptions_url;
+    std::string url;
+  };
+
+}
+
+BOOST_FUSION_ADAPT_STRUCT(gh::owner,
+  id, login, site_admin, type, avatar_url, events_url,
+  followers_url,following_url,gists_url,gravatar_id,html_url,
+  node_id,organizations_url,received_events_url,repos_url,
+  starred_url,subscriptions_url,url);
+
+namespace gh {
+  /**
+   * \brief repository as found in result lists.
+   */ 
+  struct repository {
+    uint64_t id;
+    //! name of the form org/repo or owner/repo
+    std::string full_name;
+    //! name inside the organization/owner
+    std::string name;
+    bool private{};
+    bool fork{};
+    owner owner;
+
+    std::string archive_url;
+    std::string assignees_url;
+    std::string blobs_url;
+    std::string branches_url;
+    std::string collaborators_url;
+    std::string comments_url;
+    std::string commits_url;
+    std::string compare_url;
+    std::string contents_url;
+    std::string contributors_url;
+    std::string deployments_url;
+    std::string description;
+    std::string downloads_url;
+    std::string events_url;
+    std::string forks_url;
+    std::string git_commits_url;
+    std::string git_refs_url;
+    std::string git_tags_url;
+    std::string hooks_url;
+    std::string html_url;
+    std::string issue_comment_url;
+    std::string issue_events_url;
+    std::string issues_url;
+    std::string keys_url;
+    std::string labels_url;
+    std::string languages_url;
+    std::string merges_url;
+    std::string milestones_url;
+    std::string node_id;
+    std::string notifications_url;
+
+    std::string pulls_url;
+    std::string releases_url;
+    std::string stargazers_url;
+    std::string statuses_url;
+    std::string subscribers_url;
+    std::string subscription_url;
+    std::string tags_url;
+    std::string teams_url;
+    std::string trees_url;
+    std::string url;
+    
+  };
+}
+BOOST_FUSION_ADAPT_STRUCT(gh::repository,
+  id, full_name, name, private, fork, owner,
+  archive_url, assignees_url, blobs_url, collaborators_url,
+  comments_url, commits_url, compare_url, contents_url,
+  contributors_url, deployments_url, description,
+  downloads_url, events_url, forks_url, git_commits_url,
+  git_refs_url, git_tags_url,hooks_url,html_url,issue_comment_url,
+  issue_events_url,issues_url,keys_url,labels_urls,
+  languages_url, merges_url, milestones_url,node_id,
+  notifications_url, pulls_url, releases_url,stargazers_url,statuses_url,
+  subscribers_url,subscription_url,tags_url,teams_url,trees_url,url);
+
+namespace gh::code_search {
+
+  struct result_item {
+    //! name of the file found
+    std::string name;
+    //! Full path to file found (including above name)
+    std::string path;
+    std::string url;
+    std::string git_url;
+    std::string html_url;
+    double score;
+    std::string sha;
+    gh::repository repository;
+  };
+    
+  using results = std::list<result_item>;
+}
+
+BOOST_FUSION_ADAPT_STRUCT(gh::code_search::result_item, 
+  name, path, url, git_url, 
+  html_url, score, sha, repository);
+
+
+namespace gh {
 
   /**
    * \brief Provides access to the github search API v3
    * \param the results as a JSON object.
    */
-  inline nlohmann::json search(const std::string& criteria) {
+  inline code_search::result_item code_search(const std::string& criteria) {
 
-    return {};
+    auto found = octoxxit::detail::http_get("api.github.com", "443", "/search/code?q=utils.hpp+path%3Apre%2Fbytes%2F");
+    auto found_json = nlohmann::json::parse(found["items"]);
+    return pre::json::from_json<code_search::results>(found_json);
   }
-}
-
-#include <octoxxit/root_certificates.hpp>
-
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/version.hpp>
-#include <boost/asio/connect.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/ssl/error.hpp>
-#include <boost/asio/ssl/stream.hpp>
-#include <cstdlib>
-#include <functional>
-#include <iostream>
-#include <memory>
-#include <string>
-
-namespace octoxxit::detail {
-
-//
-// Copyright (c) 2016-2017 Vinnie Falco (vinnie dot falco at gmail dot com)
-//
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-//
-// Official repository: https://github.com/boostorg/beast
-//
-
-//------------------------------------------------------------------------------
-//
-// Example: HTTP SSL client, asynchronous
-//
-//------------------------------------------------------------------------------
-
-
-
-using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
-namespace ssl = boost::asio::ssl;       // from <boost/asio/ssl.hpp>
-namespace http = boost::beast::http;    // from <boost/beast/http.hpp>
-
-//------------------------------------------------------------------------------
-
-// Report a failure
-inline void
-fail(boost::system::error_code ec, char const* what)
-{
-std::cerr << what << ": " << ec.message() << "\n";
-}
-
-// Performs an HTTP GET and prints the response
-class session : public std::enable_shared_from_this<session>
-{
-tcp::resolver resolver_;
-ssl::stream<tcp::socket> stream_;
-boost::beast::flat_buffer buffer_; // (Must persist between reads)
-http::request<http::empty_body> req_;
-http::response<http::string_body> res_;
-
-public:
-// Resolver and stream require an io_context
-explicit
-session(boost::asio::io_context& ioc, ssl::context& ctx)
-    : resolver_(ioc)
-    , stream_(ioc, ctx)
-{
-}
-
-// Start the asynchronous operation
-void
-run(
-    char const* host,
-    char const* port,
-    char const* target,
-    int version)
-{
-    // Set SNI Hostname (many hosts need this to handshake successfully)
-    if(! SSL_set_tlsext_host_name(stream_.native_handle(), host))
-    {
-        boost::system::error_code ec{static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category()};
-        std::cerr << ec.message() << "\n";
-        return;
-    }
-
-    // Set up an HTTP GET request message
-    req_.version(version);
-    req_.method(http::verb::get);
-    req_.target(target);
-    req_.set(http::field::host, host);
-    req_.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
-
-    // Look up the domain name
-    resolver_.async_resolve(
-        host,
-        port,
-        std::bind(
-            &session::on_resolve,
-            shared_from_this(),
-            std::placeholders::_1,
-            std::placeholders::_2));
-}
-
-void
-on_resolve(
-    boost::system::error_code ec,
-    tcp::resolver::results_type results)
-{
-    if(ec)
-        return fail(ec, "resolve");
-
-    // Make the connection on the IP address we get from a lookup
-    boost::asio::async_connect(
-        stream_.next_layer(),
-        results.begin(),
-        results.end(),
-        std::bind(
-            &session::on_connect,
-            shared_from_this(),
-            std::placeholders::_1));
-}
-
-void
-on_connect(boost::system::error_code ec)
-{
-    if(ec)
-        return fail(ec, "connect");
-
-    // Perform the SSL handshake
-    stream_.async_handshake(
-        ssl::stream_base::client,
-        std::bind(
-            &session::on_handshake,
-            shared_from_this(),
-            std::placeholders::_1));
-}
-
-void
-on_handshake(boost::system::error_code ec)
-{
-    if(ec)
-        return fail(ec, "handshake");
-
-    // Send the HTTP request to the remote host
-    http::async_write(stream_, req_,
-        std::bind(
-            &session::on_write,
-            shared_from_this(),
-            std::placeholders::_1,
-            std::placeholders::_2));
-}
-
-void
-on_write(
-    boost::system::error_code ec,
-    std::size_t bytes_transferred)
-{
-    boost::ignore_unused(bytes_transferred);
-
-    if(ec)
-        return fail(ec, "write");
-    
-    // Receive the HTTP response
-    http::async_read(stream_, buffer_, res_,
-        std::bind(
-            &session::on_read,
-            shared_from_this(),
-            std::placeholders::_1,
-            std::placeholders::_2));
-}
-
-void
-on_read(
-    boost::system::error_code ec,
-    std::size_t bytes_transferred)
-{
-    boost::ignore_unused(bytes_transferred);
-
-    if(ec)
-        return fail(ec, "read");
-
-    // Write the message to standard out
-    std::cout << res_ << std::endl;
-
-    // Gracefully close the stream
-    stream_.async_shutdown(
-        std::bind(
-            &session::on_shutdown,
-            shared_from_this(),
-            std::placeholders::_1));
-}
-
-void
-on_shutdown(boost::system::error_code ec)
-{
-    if(ec == boost::asio::error::eof)
-    {
-        // Rationale:
-        // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
-        ec.assign(0, ec.category());
-    }
-    if(ec)
-        return fail(ec, "shutdown");
-
-    // If we get here then the connection is closed gracefully
-}
-};
-
-//------------------------------------------------------------------------------
-
-  inline std::string http_get(const std::string& host, const std::string& port, const std::string& target) {
-
-    // The io_context is required for all I/O
-    boost::asio::io_context ioc;
-
-    // The SSL context is required, and holds certificates
-    ssl::context ctx{ssl::context::sslv23_client};
-
-    // This holds the root certificate used for verification
-    load_root_certificates(ctx);
-
-    // Launch the asynchronous operation
-    auto http_session = std::make_shared<session>(ioc, ctx);
-    http_session->run(host.data(), port.data(), target.data(), 11);
-
-    // Run the I/O service. The call will return when
-    // the get operation is complete.
-    ioc.run();
-
-    return "";
-  }
-
 }

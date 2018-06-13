@@ -1,3 +1,5 @@
+#pragma once
+
 #include <octoxxit/root_certificates.hpp>
 
 #include <boost/beast/core.hpp>

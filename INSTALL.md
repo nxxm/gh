@@ -1,6 +1,6 @@
 
-# Installing nxxm::octoxxit
-octoxxit can be installed in three ways :
+# Installing nxxm::gh
+gh can be installed in three ways :
 
 * [Copy paste in your project](#copy-paste-in-your-project)
 * [Install](#install)
@@ -12,71 +12,71 @@ octoxxit can be installed in three ways :
 
 ### GCC / Clang / MSVC
 ```
--I octoxxit/ \
--I octoxxit/deps/boostorg/algorithm/include/ \
--I octoxxit/deps/boostorg/array/include/ \
--I octoxxit/deps/boostorg/asio/include/ \
--I octoxxit/deps/boostorg/assert/include/ \
--I octoxxit/deps/boostorg/atomic/include/ \
--I octoxxit/deps/boostorg/beast/include/ \
--I octoxxit/deps/boostorg/bind/include/ \
--I octoxxit/deps/boostorg/chrono/include/ \
--I octoxxit/deps/boostorg/concept_check/include/ \
--I octoxxit/deps/boostorg/config/include/ \
--I octoxxit/deps/boostorg/container/include/ \
--I octoxxit/deps/boostorg/context/include/ \
--I octoxxit/deps/boostorg/core/include/ \
--I octoxxit/deps/boostorg/coroutine/include/ \
--I octoxxit/deps/boostorg/date_time/include/ \
--I octoxxit/deps/boostorg/detail/include/ \
--I octoxxit/deps/boostorg/endian/include/ \
--I octoxxit/deps/boostorg/exception/include/ \
--I octoxxit/deps/boostorg/filesystem/include/ \
--I octoxxit/deps/boostorg/foreach/include/ \
--I octoxxit/deps/boostorg/function/include/ \
--I octoxxit/deps/boostorg/function_types/include/ \
--I octoxxit/deps/boostorg/functional/include/ \
--I octoxxit/deps/boostorg/fusion/include/ \
--I octoxxit/deps/boostorg/integer/include/ \
--I octoxxit/deps/boostorg/intrusive/include/ \
--I octoxxit/deps/boostorg/io/include/ \
--I octoxxit/deps/boostorg/iostreams/include/ \
--I octoxxit/deps/boostorg/iterator/include/ \
--I octoxxit/deps/boostorg/lambda/include/ \
--I octoxxit/deps/boostorg/lexical_cast/include/ \
--I octoxxit/deps/boostorg/locale/include/ \
--I octoxxit/deps/boostorg/math/include/ \
--I octoxxit/deps/boostorg/move/include/ \
--I octoxxit/deps/boostorg/mpl/include/ \
--I octoxxit/deps/boostorg/numeric_conversion/include/ \
--I octoxxit/deps/boostorg/optional/include/ \
--I octoxxit/deps/boostorg/phoenix/include/ \
--I octoxxit/deps/boostorg/pool/include/ \
--I octoxxit/deps/boostorg/predef/include/ \
--I octoxxit/deps/boostorg/preprocessor/include/ \
--I octoxxit/deps/boostorg/proto/include/ \
--I octoxxit/deps/boostorg/random/include/ \
--I octoxxit/deps/boostorg/range/include/ \
--I octoxxit/deps/boostorg/ratio/include/ \
--I octoxxit/deps/boostorg/rational/include/ \
--I octoxxit/deps/boostorg/regex/include/ \
--I octoxxit/deps/boostorg/serialization/include/ \
--I octoxxit/deps/boostorg/smart_ptr/include/ \
--I octoxxit/deps/boostorg/spirit/include/ \
--I octoxxit/deps/boostorg/static_assert/include/ \
--I octoxxit/deps/boostorg/system/include/ \
--I octoxxit/deps/boostorg/thread/include/ \
--I octoxxit/deps/boostorg/throw_exception/include/ \
--I octoxxit/deps/boostorg/tokenizer/include/ \
--I octoxxit/deps/boostorg/tti/include/ \
--I octoxxit/deps/boostorg/tuple/include/ \
--I octoxxit/deps/boostorg/type_index/include/ \
--I octoxxit/deps/boostorg/type_traits/include/ \
--I octoxxit/deps/boostorg/typeof/include/ \
--I octoxxit/deps/boostorg/utility/include/ \
--I octoxxit/deps/boostorg/variant/include/ \
--I octoxxit/deps/boostorg/winapi/include/ \
--I octoxxit/deps/nlohmann/json/include/ \
+-I gh/ \
+-I gh/deps/boostorg/algorithm/include/ \
+-I gh/deps/boostorg/array/include/ \
+-I gh/deps/boostorg/asio/include/ \
+-I gh/deps/boostorg/assert/include/ \
+-I gh/deps/boostorg/atomic/include/ \
+-I gh/deps/boostorg/beast/include/ \
+-I gh/deps/boostorg/bind/include/ \
+-I gh/deps/boostorg/chrono/include/ \
+-I gh/deps/boostorg/concept_check/include/ \
+-I gh/deps/boostorg/config/include/ \
+-I gh/deps/boostorg/container/include/ \
+-I gh/deps/boostorg/context/include/ \
+-I gh/deps/boostorg/core/include/ \
+-I gh/deps/boostorg/coroutine/include/ \
+-I gh/deps/boostorg/date_time/include/ \
+-I gh/deps/boostorg/detail/include/ \
+-I gh/deps/boostorg/endian/include/ \
+-I gh/deps/boostorg/exception/include/ \
+-I gh/deps/boostorg/filesystem/include/ \
+-I gh/deps/boostorg/foreach/include/ \
+-I gh/deps/boostorg/function/include/ \
+-I gh/deps/boostorg/function_types/include/ \
+-I gh/deps/boostorg/functional/include/ \
+-I gh/deps/boostorg/fusion/include/ \
+-I gh/deps/boostorg/integer/include/ \
+-I gh/deps/boostorg/intrusive/include/ \
+-I gh/deps/boostorg/io/include/ \
+-I gh/deps/boostorg/iostreams/include/ \
+-I gh/deps/boostorg/iterator/include/ \
+-I gh/deps/boostorg/lambda/include/ \
+-I gh/deps/boostorg/lexical_cast/include/ \
+-I gh/deps/boostorg/locale/include/ \
+-I gh/deps/boostorg/math/include/ \
+-I gh/deps/boostorg/move/include/ \
+-I gh/deps/boostorg/mpl/include/ \
+-I gh/deps/boostorg/numeric_conversion/include/ \
+-I gh/deps/boostorg/optional/include/ \
+-I gh/deps/boostorg/phoenix/include/ \
+-I gh/deps/boostorg/pool/include/ \
+-I gh/deps/boostorg/predef/include/ \
+-I gh/deps/boostorg/preprocessor/include/ \
+-I gh/deps/boostorg/proto/include/ \
+-I gh/deps/boostorg/random/include/ \
+-I gh/deps/boostorg/range/include/ \
+-I gh/deps/boostorg/ratio/include/ \
+-I gh/deps/boostorg/rational/include/ \
+-I gh/deps/boostorg/regex/include/ \
+-I gh/deps/boostorg/serialization/include/ \
+-I gh/deps/boostorg/smart_ptr/include/ \
+-I gh/deps/boostorg/spirit/include/ \
+-I gh/deps/boostorg/static_assert/include/ \
+-I gh/deps/boostorg/system/include/ \
+-I gh/deps/boostorg/thread/include/ \
+-I gh/deps/boostorg/throw_exception/include/ \
+-I gh/deps/boostorg/tokenizer/include/ \
+-I gh/deps/boostorg/tti/include/ \
+-I gh/deps/boostorg/tuple/include/ \
+-I gh/deps/boostorg/type_index/include/ \
+-I gh/deps/boostorg/type_traits/include/ \
+-I gh/deps/boostorg/typeof/include/ \
+-I gh/deps/boostorg/utility/include/ \
+-I gh/deps/boostorg/variant/include/ \
+-I gh/deps/boostorg/winapi/include/ \
+-I gh/deps/nlohmann/json/include/ \
 ```
 
 ## Install
@@ -91,15 +91,15 @@ You can tweak destination with `-DCMAKE_INSTALL_PREFIX=/install/path` to change 
 
 ## If you use CMake :
 ```cmake
-find_package(octoxxit REQUIRED)
+find_package(gh REQUIRED)
 add_executable(app your_code.cpp)
-target_link_libraries(app nxxm::octoxxit)
+target_link_libraries(app nxxm::gh)
 ```
 
 ## If you don't use CMake : 
 Add to your include path : 
 ```
-INSTALL_PREFIX/include/octoxxit/deps/
+INSTALL_PREFIX/include/gh/deps/
 INSTALL_PREFIX/include/
 ```
 

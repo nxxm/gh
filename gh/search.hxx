@@ -7,7 +7,7 @@
 #include <pre/json/from_json.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
 
-#include <octoxxit/detail/http.hxx>
+#include <gh/detail/http.hxx>
 //TODO: implement returning the json
 //TODO: refactor beast backend into xxhr
 

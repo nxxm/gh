@@ -1,4 +1,4 @@
-#include <octoxxit/search.hxx>
+#include <gh/search.hxx>
 
 int main(int argc, char** argv) {
 

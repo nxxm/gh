@@ -10,7 +10,7 @@
 #
 # You can access the following variables : 
 # * nxxm : github organization name
-# * octoxxit : current project name
+# * gh : current project name
 # * . : current project srcs folder.
 #
 # *                                                                  : all deps direct and transitive 
@@ -25,7 +25,7 @@
 
 cmake_minimum_required(VERSION 3.5.0)
 
-project(octoxxit VERSION "0.0.1")
+project(gh VERSION "0.0.1")
 enable_testing()
 
 # Compile with shipped-with headers or without 
@@ -35,7 +35,7 @@ option(INGLUED "Enable use of #inglued shipped with dependencies." ON)
 option(UNIT_TESTS "Enable Unit Testing" OFF)
 
 
-# Warning as errors to ensure octoxxit quality
+# Warning as errors to ensure gh quality
 string(TOUPPER "${CMAKE_CXX_COMPILER_ID}" COMPILER_IN_USE)
 if ("${COMPILER_IN_USE}" STREQUAL "GNU" OR "${COMPILER_IN_USE}" MATCHES "CLANG")
 	add_definitions(
@@ -49,7 +49,7 @@ endif()
 # XXX: nxxm cannot ship this for the moment. An option would be to ship it with nxxm until headerizer is finished.
 add_definitions(-DBOOST_ERROR_CODE_HEADER_ONLY)
 find_package(Threads REQUIRED)
-find_package(OpenSSL)
+find_package(OpenSSL REQUIRED)
 
 # algorithm
 if (INGLUED)
@@ -502,16 +502,16 @@ endif()
 
 # Define header only library
 include_directories(BEFORE ${CMAKE_CURRENT_LIST_DIR})
-add_library(octoxxit INTERFACE)
-add_library(nxxm::octoxxit ALIAS octoxxit)
+add_library(gh INTERFACE)
+add_library(nxxm::gh ALIAS gh)
 
-target_link_libraries(octoxxit INTERFACE ${OPENSSL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(gh INTERFACE ${OPENSSL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
 set(include_install_dir "include")
 
 if (INGLUED)
 
-  target_include_directories(octoxxit INTERFACE 
+  target_include_directories(gh INTERFACE 
     # Transitive libraries location once installed
     $<INSTALL_INTERFACE:${include_install_dir}/./deps> 
   )
@@ -519,7 +519,7 @@ if (INGLUED)
 
 else()
 
-  target_link_libraries(octoxxit INTERFACE 
+  target_link_libraries(gh INTERFACE 
       Boost::boost
       Boost::boost
       Boost::boost
@@ -635,7 +635,7 @@ configure_package_config_file(
 
 # Targets:
 install(
-    TARGETS octoxxit
+    TARGETS gh
     EXPORT "${targets_export_name}"
     LIBRARY DESTINATION "lib"
     ARCHIVE DESTINATION "lib"
@@ -1169,9 +1169,9 @@ if (INGLUED)
 endif(INGLUED)
 
 # Config
-#   * <prefix>/lib/cmake/octoxxit/octoxxitConfig.cmake
-#   * <prefix>/lib/cmake/octoxxit/octoxxitConfigVersion.cmake
-#   * <prefix>/lib/cmake/octoxxit/octoxxitTargets.cmake
+#   * <prefix>/lib/cmake/gh/ghConfig.cmake
+#   * <prefix>/lib/cmake/gh/ghConfigVersion.cmake
+#   * <prefix>/lib/cmake/gh/ghTargets.cmake
 install(
     FILES "${project_config}" "${version_config}"
     DESTINATION "${config_install_dir}"

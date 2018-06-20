@@ -56,7 +56,7 @@ namespace gh {
     std::string full_name;
     //! name inside the organization/owner
     std::string name;
-    bool private{};
+    //bool private{}; // TODO: support keyword mapping for member names in pre::json because private is a c++ keyword.
     bool fork{};
     owner_t owner;
 
@@ -105,6 +105,7 @@ namespace gh {
   };
 }
 BOOST_FUSION_ADAPT_STRUCT(gh::repository_t,
+  id, full_name, name, /*private_,*/ fork, owner,
   archive_url, assignees_url, blobs_url, collaborators_url,
   comments_url, commits_url, compare_url, contents_url,
   contributors_url, deployments_url, description,

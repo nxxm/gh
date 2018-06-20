@@ -30,8 +30,20 @@ Works - utils.hpp path:pre/bytes/*/
    std::cout << some.dump(2) << std::endl;
   */
 
-  auto possibles = gh::query_code_search("utils.hpp path:pre/bytes/");
-  std::cout << pre::json::to_json(possibles).dump(2) << std::endl;
+  {
+    std::cout << "pre ::: " << std::endl;
+    auto possibles = gh::query_code_search("utils.hpp+path%3Apre%2Fbytes%2F" /*"utils.hpp path:pre/bytes/"*/);
+
+    std::cout << pre::json::to_json(possibles).dump(2) << std::endl;
+  }
+
+  {
+    std::cout << "fusion ::: " << std::endl;
+    auto possibles = gh::query_code_search("adapt_struct.hpp%20path%3a%2fboost%2ffusion%2finclude%2f" /*"adapt_struct.hpp path:/boost/fusion/include/"*/);
+    std::cout << pre::json::to_json(possibles).dump(2) << std::endl;
+  }
+
+
 
   return 0;
 }

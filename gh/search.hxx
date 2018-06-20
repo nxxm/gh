@@ -71,7 +71,7 @@ namespace gh {
     std::string contents_url;
     std::string contributors_url;
     std::string deployments_url;
-    std::string description;
+    std::optional<std::string> description;
     std::string downloads_url;
     std::string events_url;
     std::string forks_url;
@@ -147,7 +147,8 @@ namespace gh {
    */
   inline code_search::results query_code_search(const std::string& criteria) {
 
-    auto found = gh::detail::http_get("api.github.com", "443", "/search/code?q=utils.hpp+path%3Apre%2Fbytes%2F");
+    //TODO: use xxhr::util::urlEncode to encode criteria. 
+    auto found = gh::detail::http_get("api.github.com", "443", std::string("/search/code?q=") + criteria );
     auto found_json = nlohmann::json::parse(found)["items"];
     return pre::json::from_json<code_search::results>(found_json);
   }

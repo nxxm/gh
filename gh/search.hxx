@@ -8,7 +8,6 @@
 #include <boost/fusion/include/adapt_struct.hpp>
 
 #include <gh/detail/http.hxx>
-//TODO: implement returning the json
 //TODO: refactor beast backend into xxhr
 
 

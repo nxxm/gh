@@ -1,5 +1,7 @@
 #include <gh/search.hxx>
 
+#include <pre/json/to_json.hpp>
+
 int main(int argc, char** argv) {
 
   //octoxxit::detail::http_get("api.github.com", "443", "/");
@@ -28,8 +30,8 @@ Works - utils.hpp path:pre/bytes/*/
    std::cout << some.dump(2) << std::endl;
   */
 
-  auto possibles = gh::code_search("utils.hpp path:pre/bytes/");
-  std::cout << possibles.dump(2) << std::endl;
+  auto possibles = gh::query_code_search("utils.hpp path:pre/bytes/");
+  std::cout << pre::json::to_json(possibles).dump(2) << std::endl;
 
   return 0;
 }

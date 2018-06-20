@@ -17,7 +17,7 @@ namespace gh {
   /**
    * \brief Repository owner, typically a github user or organization.
    */ 
-  struct owner {
+  struct owner_t {
     uint64_t id;
     std::string login;
     bool site_admin{};
@@ -40,7 +40,7 @@ namespace gh {
 
 }
 
-BOOST_FUSION_ADAPT_STRUCT(gh::owner,
+BOOST_FUSION_ADAPT_STRUCT(gh::owner_t,
   id, login, site_admin, type, avatar_url, events_url,
   followers_url,following_url,gists_url,gravatar_id,html_url,
   node_id,organizations_url,received_events_url,repos_url,
@@ -50,7 +50,7 @@ namespace gh {
   /**
    * \brief repository as found in result lists.
    */ 
-  struct repository {
+  struct repository_t {
     uint64_t id;
     //! name of the form org/repo or owner/repo
     std::string full_name;
@@ -58,7 +58,7 @@ namespace gh {
     std::string name;
     bool private{};
     bool fork{};
-    owner owner;
+    owner_t owner;
 
     std::string archive_url;
     std::string assignees_url;
@@ -104,21 +104,20 @@ namespace gh {
     
   };
 }
-BOOST_FUSION_ADAPT_STRUCT(gh::repository,
-  id, full_name, name, private, fork, owner,
+BOOST_FUSION_ADAPT_STRUCT(gh::repository_t,
   archive_url, assignees_url, blobs_url, collaborators_url,
   comments_url, commits_url, compare_url, contents_url,
   contributors_url, deployments_url, description,
   downloads_url, events_url, forks_url, git_commits_url,
   git_refs_url, git_tags_url,hooks_url,html_url,issue_comment_url,
-  issue_events_url,issues_url,keys_url,labels_urls,
+  issue_events_url,issues_url,keys_url,labels_url,
   languages_url, merges_url, milestones_url,node_id,
   notifications_url, pulls_url, releases_url,stargazers_url,statuses_url,
   subscribers_url,subscription_url,tags_url,teams_url,trees_url,url);
 
 namespace gh::code_search {
 
-  struct result_item {
+  struct result {
     //! name of the file found
     std::string name;
     //! Full path to file found (including above name)
@@ -128,13 +127,13 @@ namespace gh::code_search {
     std::string html_url;
     double score;
     std::string sha;
-    gh::repository repository;
+    gh::repository_t repository;
   };
     
-  using results = std::list<result_item>;
+  using results = std::list<result>;
 }
 
-BOOST_FUSION_ADAPT_STRUCT(gh::code_search::result_item, 
+BOOST_FUSION_ADAPT_STRUCT(gh::code_search::result, 
   name, path, url, git_url, 
   html_url, score, sha, repository);
 
@@ -145,10 +144,10 @@ namespace gh {
    * \brief Provides access to the github search API v3
    * \param the results as a JSON object.
    */
-  inline code_search::result_item code_search(const std::string& criteria) {
+  inline code_search::results query_code_search(const std::string& criteria) {
 
-    auto found = octoxxit::detail::http_get("api.github.com", "443", "/search/code?q=utils.hpp+path%3Apre%2Fbytes%2F");
-    auto found_json = nlohmann::json::parse(found["items"]);
+    auto found = gh::detail::http_get("api.github.com", "443", "/search/code?q=utils.hpp+path%3Apre%2Fbytes%2F");
+    auto found_json = nlohmann::json::parse(found)["items"];
     return pre::json::from_json<code_search::results>(found_json);
   }
 }

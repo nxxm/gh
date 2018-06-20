@@ -13,7 +13,7 @@
 # * gh : current project name
 # * . : current project srcs folder.
 #
-# *                                                                  : all deps direct and transitive 
+# *                                                                      : all deps direct and transitive 
 #   -  : The cmake package name from the cmake_package_map otherwise: nxxm
 #   -  : The cmake target name from cmake_package_map otherwise: ::
 #   - nxxm : the github organization name
@@ -124,6 +124,13 @@ endif()
 # container
 if (INGLUED)
   include_directories(AFTER deps/boostorg/container/include/)
+else ()
+  find_package(Boost REQUIRED)
+endif()
+
+# container_hash
+if (INGLUED)
+  include_directories(AFTER deps/boostorg/container_hash/include/)
 else ()
   find_package(Boost REQUIRED)
 endif()
@@ -415,6 +422,13 @@ else ()
   find_package(Boost REQUIRED)
 endif()
 
+# test
+if (INGLUED)
+  include_directories(AFTER deps/boostorg/test/include/)
+else ()
+  find_package(Boost REQUIRED)
+endif()
+
 # thread
 if (INGLUED)
   include_directories(AFTER deps/boostorg/thread/include/)
@@ -425,6 +439,13 @@ endif()
 # throw_exception
 if (INGLUED)
   include_directories(AFTER deps/boostorg/throw_exception/include/)
+else ()
+  find_package(Boost REQUIRED)
+endif()
+
+# timer
+if (INGLUED)
+  include_directories(AFTER deps/boostorg/timer/include/)
 else ()
   find_package(Boost REQUIRED)
 endif()
@@ -490,6 +511,13 @@ if (INGLUED)
   include_directories(AFTER deps/boostorg/winapi/include/)
 else ()
   find_package(Boost REQUIRED)
+endif()
+
+# json
+if (INGLUED)
+  include_directories(AFTER deps/cpp-pre/json/)
+else ()
+  find_package(cpp-pre REQUIRED)
 endif()
 
 # json
@@ -583,6 +611,10 @@ else()
       Boost::boost
       Boost::boost
       Boost::boost
+      Boost::boost
+      Boost::boost
+      Boost::boost
+      cpp-pre::json
       nlohmann_json
   )
 
@@ -739,6 +771,14 @@ if (INGLUED)
       DESTINATION ${include_install_dir}/./deps
       FILES_MATCHING PATTERN "*.[ih]*"
       PATTERN deps/boostorg/container/deps EXCLUDE # Transitive deps are hikedup on `glue seal`.
+      )
+
+
+  install(
+      DIRECTORY deps/boostorg/container_hash/include/
+      DESTINATION ${include_install_dir}/./deps
+      FILES_MATCHING PATTERN "*.[ih]*"
+      PATTERN deps/boostorg/container_hash/deps EXCLUDE # Transitive deps are hikedup on `glue seal`.
       )
 
 
@@ -1071,6 +1111,14 @@ if (INGLUED)
 
 
   install(
+      DIRECTORY deps/boostorg/test/include/
+      DESTINATION ${include_install_dir}/./deps
+      FILES_MATCHING PATTERN "*.[ih]*"
+      PATTERN deps/boostorg/test/deps EXCLUDE # Transitive deps are hikedup on `glue seal`.
+      )
+
+
+  install(
       DIRECTORY deps/boostorg/thread/include/
       DESTINATION ${include_install_dir}/./deps
       FILES_MATCHING PATTERN "*.[ih]*"
@@ -1083,6 +1131,14 @@ if (INGLUED)
       DESTINATION ${include_install_dir}/./deps
       FILES_MATCHING PATTERN "*.[ih]*"
       PATTERN deps/boostorg/throw_exception/deps EXCLUDE # Transitive deps are hikedup on `glue seal`.
+      )
+
+
+  install(
+      DIRECTORY deps/boostorg/timer/include/
+      DESTINATION ${include_install_dir}/./deps
+      FILES_MATCHING PATTERN "*.[ih]*"
+      PATTERN deps/boostorg/timer/deps EXCLUDE # Transitive deps are hikedup on `glue seal`.
       )
 
 
@@ -1155,6 +1211,14 @@ if (INGLUED)
       DESTINATION ${include_install_dir}/./deps
       FILES_MATCHING PATTERN "*.[ih]*"
       PATTERN deps/boostorg/winapi/deps EXCLUDE # Transitive deps are hikedup on `glue seal`.
+      )
+
+
+  install(
+      DIRECTORY deps/cpp-pre/json/
+      DESTINATION ${include_install_dir}/./deps
+      FILES_MATCHING PATTERN "*.[ih]*"
+      PATTERN deps/cpp-pre/json/deps EXCLUDE # Transitive deps are hikedup on `glue seal`.
       )
 
 

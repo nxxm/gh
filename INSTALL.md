@@ -24,6 +24,7 @@ gh can be installed in three ways :
 -I gh/deps/boostorg/concept_check/include/ \
 -I gh/deps/boostorg/config/include/ \
 -I gh/deps/boostorg/container/include/ \
+-I gh/deps/boostorg/container_hash/include/ \
 -I gh/deps/boostorg/context/include/ \
 -I gh/deps/boostorg/core/include/ \
 -I gh/deps/boostorg/coroutine/include/ \
@@ -65,8 +66,10 @@ gh can be installed in three ways :
 -I gh/deps/boostorg/spirit/include/ \
 -I gh/deps/boostorg/static_assert/include/ \
 -I gh/deps/boostorg/system/include/ \
+-I gh/deps/boostorg/test/include/ \
 -I gh/deps/boostorg/thread/include/ \
 -I gh/deps/boostorg/throw_exception/include/ \
+-I gh/deps/boostorg/timer/include/ \
 -I gh/deps/boostorg/tokenizer/include/ \
 -I gh/deps/boostorg/tti/include/ \
 -I gh/deps/boostorg/tuple/include/ \
@@ -76,6 +79,7 @@ gh can be installed in three ways :
 -I gh/deps/boostorg/utility/include/ \
 -I gh/deps/boostorg/variant/include/ \
 -I gh/deps/boostorg/winapi/include/ \
+-I gh/deps/cpp-pre/json/ \
 -I gh/deps/nlohmann/json/include/ \
 ```
 

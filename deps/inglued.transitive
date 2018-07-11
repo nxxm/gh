@@ -1,4 +1,7 @@
 {
+  "aantron/better-enums": {
+    "@": "0.11.1"
+  },
   "boostorg/algorithm": {
     "-I": "include/",
     "@": "boost-1.67.0"
@@ -16,6 +19,10 @@
     "@": "boost-1.67.0"
   },
   "boostorg/atomic": {
+    "-I": "include/",
+    "@": "boost-1.67.0"
+  },
+  "boostorg/beast": {
     "-I": "include/",
     "@": "boost-1.67.0"
   },
@@ -258,5 +265,11 @@
   "boostorg/winapi": {
     "-I": "include/",
     "@": "boost-1.67.0"
+  },
+  "cpp-pre/type_traits": {
+    "@": "v2.0.0"
+  },
+  "daminetreg/js-bind": {
+    "@": "v0.0.1"
   }
 }

@@ -13,6 +13,7 @@ gh can be installed in three ways :
 ### GCC / Clang / MSVC
 ```
 -I gh/ \
+-I gh/deps/aantron/better-enums/ \
 -I gh/deps/boostorg/algorithm/include/ \
 -I gh/deps/boostorg/array/include/ \
 -I gh/deps/boostorg/asio/include/ \
@@ -80,6 +81,9 @@ gh can be installed in three ways :
 -I gh/deps/boostorg/variant/include/ \
 -I gh/deps/boostorg/winapi/include/ \
 -I gh/deps/cpp-pre/json/ \
+-I gh/deps/cpp-pre/type_traits/ \
+-I gh/deps/daminetreg/js-bind/ \
+-I gh/deps/daminetreg/xxhr/ \
 -I gh/deps/nlohmann/json/include/ \
 ```
 

@@ -7,9 +7,8 @@
 #include <pre/json/from_json.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
 
-#include <gh/detail/http.hxx>
-//TODO: refactor beast backend into xxhr
-
+#include <xxhr/xxhr.hpp>
+#include <xxhr/apisync.hpp>
 
 namespace gh {
 
@@ -146,8 +145,16 @@ namespace gh {
    */
   inline code_search::results query_code_search(const std::string& criteria) {
 
-    //TODO: use xxhr::util::urlEncode to encode criteria. 
-    auto found = gh::detail::http_get("api.github.com", "443", std::string("/search/code?q=") + criteria );
+    xxhr::sync sync_;
+    xxhr::GET(xxhr::Url{"https://api.github.com/search/code"}, xxhr::Parameters{{"q", criteria}}, 
+        xxhr::Digest{"daminetreg", "5c8bc510c7880fcb0db28410218665d707564b3f"},
+        xxhr::on_response = sync_);
+    auto response = sync_();
+
+    std::cout << response.url << response.status_code << " found - " << response.text << std::endl;
+    auto found = response.text;
+
+//    auto found = gh::detail::http_get("api.github.com", "443", std::string("/search/code?q=") + xxhr::util::urlEncode(criteria) );
     auto found_json = nlohmann::json::parse(found)["items"];
     return pre::json::from_json<code_search::results>(found_json);
   }

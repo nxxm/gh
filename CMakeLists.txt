@@ -13,7 +13,7 @@
 # * gh : current project name
 # * . : current project srcs folder.
 #
-# *                                                                      : all deps direct and transitive 
+# *                                                                          : all deps direct and transitive 
 #   -  : The cmake package name from the cmake_package_map otherwise: nxxm
 #   -  : The cmake target name from cmake_package_map otherwise: ::
 #   - nxxm : the github organization name
@@ -50,6 +50,13 @@ endif()
 add_definitions(-DBOOST_ERROR_CODE_HEADER_ONLY)
 find_package(Threads REQUIRED)
 find_package(OpenSSL REQUIRED)
+
+# better-enums
+if (INGLUED)
+  include_directories(AFTER deps/aantron/better-enums/)
+else ()
+  find_package(aantron REQUIRED)
+endif()
 
 # algorithm
 if (INGLUED)
@@ -520,6 +527,27 @@ else ()
   find_package(cpp-pre REQUIRED)
 endif()
 
+# type_traits
+if (INGLUED)
+  include_directories(AFTER deps/cpp-pre/type_traits/)
+else ()
+  find_package(cpp-pre REQUIRED)
+endif()
+
+# js-bind
+if (INGLUED)
+  include_directories(AFTER deps/daminetreg/js-bind/)
+else ()
+  find_package(daminetreg REQUIRED)
+endif()
+
+# xxhr
+if (INGLUED)
+  include_directories(AFTER deps/daminetreg/xxhr/)
+else ()
+  find_package(daminetreg REQUIRED)
+endif()
+
 # json
 if (INGLUED)
   include_directories(AFTER deps/nlohmann/json/include/)
@@ -548,6 +576,7 @@ if (INGLUED)
 else()
 
   target_link_libraries(gh INTERFACE 
+      aantron::better-enums
       Boost::boost
       Boost::boost
       Boost::boost
@@ -615,6 +644,9 @@ else()
       Boost::boost
       Boost::boost
       cpp-pre::json
+      cpp-pre::type_traits
+      daminetreg::js-bind
+      daminetreg::xxhr
       nlohmann_json
   )
 
@@ -684,6 +716,14 @@ install(
 
 # Install the deps when run in INGLUED mode
 if (INGLUED)
+
+
+  install(
+      DIRECTORY deps/aantron/better-enums/
+      DESTINATION ${include_install_dir}/./deps
+      FILES_MATCHING PATTERN "*.[ih]*"
+      PATTERN deps/aantron/better-enums/deps EXCLUDE # Transitive deps are hikedup on `glue seal`.
+      )
 
 
   install(
@@ -1219,6 +1259,30 @@ if (INGLUED)
       DESTINATION ${include_install_dir}/./deps
       FILES_MATCHING PATTERN "*.[ih]*"
       PATTERN deps/cpp-pre/json/deps EXCLUDE # Transitive deps are hikedup on `glue seal`.
+      )
+
+
+  install(
+      DIRECTORY deps/cpp-pre/type_traits/
+      DESTINATION ${include_install_dir}/./deps
+      FILES_MATCHING PATTERN "*.[ih]*"
+      PATTERN deps/cpp-pre/type_traits/deps EXCLUDE # Transitive deps are hikedup on `glue seal`.
+      )
+
+
+  install(
+      DIRECTORY deps/daminetreg/js-bind/
+      DESTINATION ${include_install_dir}/./deps
+      FILES_MATCHING PATTERN "*.[ih]*"
+      PATTERN deps/daminetreg/js-bind/deps EXCLUDE # Transitive deps are hikedup on `glue seal`.
+      )
+
+
+  install(
+      DIRECTORY deps/daminetreg/xxhr/
+      DESTINATION ${include_install_dir}/./deps
+      FILES_MATCHING PATTERN "*.[ih]*"
+      PATTERN deps/daminetreg/xxhr/deps EXCLUDE # Transitive deps are hikedup on `glue seal`.
       )
 
 

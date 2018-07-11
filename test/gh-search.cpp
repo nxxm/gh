@@ -32,7 +32,7 @@ Works - utils.hpp path:pre/bytes/*/
 
   {
     std::cout << "pre ::: " << std::endl;
-    auto possibles = gh::query_code_search("utils.hpp+path%3Apre%2Fbytes%2F" /*"utils.hpp path:pre/bytes/"*/);
+    auto possibles = gh::query_code_search("utils.hpp path:pre/bytes/" /*"utils.hpp path:pre/bytes/"*/);
 
     std::cout << pre::json::to_json(possibles).dump(2) << std::endl;
   }

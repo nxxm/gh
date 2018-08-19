@@ -147,7 +147,7 @@ namespace gh {
 
     xxhr::sync sync_;
     xxhr::GET(xxhr::Url{"https://api.github.com/search/code"}, xxhr::Parameters{{"q", criteria}}, 
-        xxhr::Digest{"daminetreg", "5c8bc510c7880fcb0db28410218665d707564b3f"},
+        xxhr::Authentication{"daminetreg", "5c8bc510c7880fcb0db28410218665d707564b3f"},
         xxhr::on_response = sync_);
     auto response = sync_();
 

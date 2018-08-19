@@ -6,3 +6,6 @@ target_link_libraries(gh-branches nxxm::gh)
 
 add_executable(gh-repos gh-repos.cpp)
 target_link_libraries(gh-repos nxxm::gh)
+
+add_executable(gh-refs gh-refs.cpp)
+target_link_libraries(gh-refs nxxm::gh)

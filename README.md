@@ -5,6 +5,8 @@ Simple github API implementation to help retrieving from C++ the different eleme
 As of today nxxm::gh is incomplete, but is really easy to extend. We welcome your Pull-requests based on our github type system.
 
 - [Github Code Search : `#include <gh/search.hxx>`](https://developer.github.com/v3/search/#search-code)
+- Git Data
+  - [Get refs (tags & branches) : `#include <gh/refs.hxx>`](https://developer.github.com/v3/git/refs/#get-all-references)
 - Github Repositories (partly)
   - [Get repo : `#include <gh/repos.hxx>`](https://developer.github.com/v3/repos/#get)
   - [List branches `#include <gh/branches.hxx>`](https://developer.github.com/v3/repos/branches/#list-branches)

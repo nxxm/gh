@@ -118,7 +118,7 @@ namespace gh {
     xxhr::GET(url, xxhr::Parameters{{"q", criteria}}, 
       xxhr::Authentication{"daminetreg", "5c8bc510c7880fcb0db28410218665d707564b3f"},
       xxhr::on_response = [&](auto&& resp) {
-        if (!resp.error) {
+        if ( (!resp.error) && (resp.status_code == 200) ) {
           auto found_json = nlohmann::json::parse(resp.text)["items"];
           result_handler(pre::json::from_json<code_search::results>(found_json));
         } else {

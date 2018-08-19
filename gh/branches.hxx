@@ -53,8 +53,7 @@ namespace gh {
     GET(url,
       Authentication{"daminetreg", "5c8bc510c7880fcb0db28410218665d707564b3f"}, 
       on_response = [&](auto&& resp) {
-        
-        if (!resp.error) {
+        if ( (!resp.error) && (resp.status_code == 200) ) {
           result_handler(pre::json::from_json<repos::branches>(resp.text));
         } else {
           throw std::runtime_error(url + " is not responding");

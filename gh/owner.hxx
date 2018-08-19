@@ -5,8 +5,6 @@
 #include <list>
 #include <boost/fusion/include/adapt_struct.hpp>
 
-#include <xxhr/xxhr.hpp>
-
 namespace gh {
 
   /**

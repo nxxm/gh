@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <map>
 #include <string>
+#include <cctype>
 
 namespace xxhr {
 
@@ -18,6 +19,7 @@ namespace xxhr {
       }
   };
 
+  //! HTTP Headers to add to the request or received in xxhr::Response
   using Header = std::map<std::string, std::string, CaseInsensitiveCompare>;
   using Url = std::string;
 

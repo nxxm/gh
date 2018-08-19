@@ -22,8 +22,6 @@
 #include <xxhr/max_redirects.hpp>
 #include <xxhr/multipart.hpp>
 #include <xxhr/parameters.hpp>
-#include <xxhr/payload.hpp>
-#include <xxhr/proxies.hpp>
 #include <xxhr/response.hpp>
 #include <xxhr/timeout.hpp>
 
@@ -48,6 +46,10 @@ namespace xxhr {
 
   class Session::Impl : public std::enable_shared_from_this<Session::Impl> {
     public:
+    Impl() {
+      // We need to download whatever fits in RAM
+      res_parser_.body_limit(std::numeric_limits<std::uint64_t>::max());
+    }
 
     void SetUrl(const Url& url);
     void SetParameters(const Parameters& parameters);
@@ -57,13 +59,6 @@ namespace xxhr {
     void SetAuth(const Authentication& auth);
     void SetDigest(const Digest& auth);
 
-    //! Set the body of the request url encoded
-    void SetPayload(Payload&& payload);
-    
-    //! Set the body of the request url encoded
-    void SetPayload(const Payload& payload);
-    void SetProxies(Proxies&& proxies);
-    void SetProxies(const Proxies& proxies);
     void SetMultipart(Multipart&& multipart);
     void SetMultipart(const Multipart& multipart);
     void SetRedirect(const bool& redirect);
@@ -71,10 +66,7 @@ namespace xxhr {
     void SetCookies(const Cookies& cookies, bool delete_them = false);
     void CookiesCleanup();
 
-    //! Set the provided body of request raw, without urlencoding
-    void SetBody(Body&& body);
-    
-    //! Set the provided body of request raw, without urlencoding
+    //! Set the provided body of request
     void SetBody(const Body& body);
 
     template<class Handler>
@@ -84,7 +76,7 @@ namespace xxhr {
 
     void QUERY(http::verb method);
 
-    void DELETE();
+    void DELETE_();
     void GET();
     void HEAD();
     void OPTIONS();
@@ -98,6 +90,8 @@ namespace xxhr {
     Parameters parameters_;
     http::request<http::string_body> req_;
     std::chrono::milliseconds timeout_ = std::chrono::milliseconds{0};
+    bool redirect_ = true;
+    std::int32_t number_of_redirects = std::numeric_limits<std::int32_t>::max();
 
     std::function<void(Response&&)> on_response;
 
@@ -107,6 +101,8 @@ namespace xxhr {
     tcp::resolver resolver_{ioc};
     plain_or_tls stream_; 
     boost::beast::flat_buffer buffer_; // (Must persist between reads)
+
+    http::response_parser<http::string_body> res_parser_;
     http::response<http::string_body> res_;
 
     bool is_tls_stream() {
@@ -233,12 +229,13 @@ namespace xxhr {
         std::visit([this](auto& stream) {
           if constexpr (std::is_same_v<std::monostate,std::decay_t<decltype(stream)>>) return;
           else {
-            http::async_read(stream, buffer_, res_,
+            http::async_read(stream, buffer_, res_parser_,
                 std::bind(
                     &Session::Impl::on_read,
                     shared_from_this(),
                     std::placeholders::_1,
                     std::placeholders::_2));
+
           }
         }, stream_);
     }
@@ -251,11 +248,13 @@ namespace xxhr {
         if(ec)
           return fail(ec, ErrorCode::NETWORK_RECEIVE_ERROR);
 
+        res_ = res_parser_.get();
+
         // Write the message to standard out
         Header response_headers;
         Cookies response_cookies;
         for (auto&& header : res_.base()) {
-          if (header.name() == http::field::set_cookie) {
+          if (header.name() == http::field::set_cookie) { // TODO: case insensitive
             response_cookies
               .parse_cookie_string(std::string(header.value()));
           } else {
@@ -265,15 +264,6 @@ namespace xxhr {
                   std::string(header.value()));
           }
         }
-
-        on_response(xxhr::Response(
-          res_.result_int(),
-          Error{},
-          res_.body(),
-          response_headers,
-          url_,
-          response_cookies
-        ));
 
         // Gracefully close the stream
         if (is_tls_stream()) {
@@ -286,14 +276,34 @@ namespace xxhr {
         } else {
           on_shutdown(ec);
         }
+
+
+        if (response_headers.find("Location") != response_headers.end()) {
+          SetUrl(response_headers["Location"]);
+          if ( (redirect_) && (number_of_redirects > 0) )  {
+            --number_of_redirects;
+            QUERY(req_.method()); // Follow the redirection
+          }
+        } else {
+
+          on_response(xxhr::Response(
+            res_.result_int(),
+            Error{},
+            res_.body(),
+            response_headers,
+            url_,
+            response_cookies
+          ));
+
+       }
     }
 
     void on_shutdown(boost::system::error_code ec) {
-      if(ec == boost::asio::error::eof) {
+      //if(ec == boost::asio::error::eof) {
           // Rationale:
           // http://stackoverflow.com/questions/25587403/boost-asio-ssl-async-shutdown-always-finishes-with-an-error
           ec.assign(0, ec.category());
-      }
+      //}
       if(ec)
           return fail(ec, ErrorCode::GENERIC_SSL_ERROR);
 
@@ -353,69 +363,31 @@ namespace xxhr {
   }
 
   void Session::Impl::SetDigest(const Digest& auth) {
+    //TODO: Replace BASIC auth here by Digest based authentication (MD5 summing the info)
     namespace http = boost::beast::http;
     std::stringstream ss; ss << "Basic " << util::encode64(auth.GetAuthString());
     req_.set(http::field::authorization, ss.str());
   }
 
-  void Session::Impl::SetPayload(Payload&& payload) {
-    req_.set(http::field::content_type, "application/x-www-form-urlencoded");
-    req_.body() = payload.content;
-  }
-
-  void Session::Impl::SetPayload(const Payload& payload) {
-    SetPayload(std::move(const_cast<Payload&>(payload)));
-  }
-
-  void Session::Impl::SetProxies(const Proxies& ) { 
-    /* TODO: there isn't anything worse than http proxies. */ }
-  void Session::Impl::SetProxies(Proxies&& ) { 
-    /* TODO: there isn't anything worse than http proxies. */ }
- 
-
-
-/*
- 
-Upgrade-Insecure-Requests: 1
-Content-Type: multipart/form-data; boundary=---------------------------8721656041911415653955004498
-Content-Length: 465
-
------------------------------8721656041911415653955004498
-Content-Disposition: form-data; name="myTextField"
-
-Test
------------------------------8721656041911415653955004498
-Content-Disposition: form-data; name="myCheckBox"
-
-on
------------------------------8721656041911415653955004498
-Content-Disposition: form-data; name="myFile"; filename="test.txt"
-Content-Type: text/plain
-
-Simple file.
------------------------------8721656041911415653955004498--
-
-
- */
-
   void Session::Impl::SetMultipart(Multipart&& multipart) {
-    constexpr auto boundary_str = "---------------------------8721656041911415653955004498";
+    constexpr auto boundary_str = "---------------------------5602587876013262401422655391";
+    constexpr auto boundary_delim = "--";
 
     req_.set(http::field::content_type, std::string("multipart/form-data; boundary=") + boundary_str);
 
     std::stringstream body;
 
-    for (auto& part : multipart.parts) {
+    for (auto it = multipart.parts.begin(); it != multipart.parts.end(); ++it) {
+      auto& part = *it;
       
-      body << boundary_str << CRLF;
-      body << "Content-Disposition: form-data; name=" << part.name 
-        << CRLF
-        << CRLF;
-       
+      body << boundary_delim << boundary_str << CRLF;
+
+      body << "Content-Disposition: form-data; name=\"" << part.name << "\"; " << "filename=\"" << part.value << "\"" << CRLF
+       << "Content-Type: application/octet-stream" 
+       << CRLF
+       << CRLF;      
 
       if (part.is_file) {
-        body << "Content-Type: application/octet-stream" << CRLF;
-
         std::ifstream ifs(part.value, std::ios::in | std::ios::binary); 
         ifs.exceptions(std::ios::badbit);
 
@@ -427,27 +399,35 @@ Simple file.
         ifs.read(const_cast<char*>(file_content.data()), file_size);
         body.write(file_content.data(), file_content.size());
       } else if (part.is_buffer) {
-        body << "Content-Type: application/octet-stream" << CRLF;
+
         body.write(reinterpret_cast<const char*>(part.data), part.datalen);
+
       } else {
         body << part.value;
       }
 
-      body << boundary_str << CRLF;
+      if (it != std::prev(multipart.parts.end())) {
+        body << CRLF << boundary_delim <<  boundary_str << CRLF;
+      } else {
+        body << CRLF << boundary_delim << boundary_str << boundary_delim << CRLF;
+      }
+
     }
 
+
     req_.body() = body.str();
+    std::cout << body.str() << std::endl;
   }
 
   void Session::Impl::SetMultipart(const Multipart& multipart) {
     SetMultipart(std::move(const_cast<Multipart&>(multipart)));
   }
 
-  void Session::Impl::SetRedirect(const bool& ) {
-    //TODO: implement following redirects
+  void Session::Impl::SetRedirect(const bool& redirect ) {
+    redirect_ = redirect;
   }
-  void Session::Impl::SetMaxRedirects(const MaxRedirects& ) {
-    //TODO: implement max redirect
+  void Session::Impl::SetMaxRedirects(const MaxRedirects& max_redirects ) {
+    number_of_redirects = max_redirects.number_of_redirects;
   }
 
   void Session::Impl::SetCookies(const Cookies& cookies, bool delete_them) {
@@ -462,18 +442,31 @@ Simple file.
 
   }
 
-  void Session::Impl::SetBody(Body&& body) { req_.body() = body; }
-  void Session::Impl::SetBody(const Body& body) { req_.body()  = body; }
+  void Session::Impl::SetBody(const Body& body) { 
+
+    if (body.is_form_encoded) {
+      req_.set(http::field::content_type, "application/x-www-form-urlencoded");
+    }
+
+    req_.body() = body.content; 
+  
+  }
 
   void Session::Impl::QUERY(http::verb method) {
+    // Cleanup for subsequent calls
+    res_ = http::response<http::string_body>();
+
     req_.method(method);
 
-    // Set up an HTTP GET request message
     req_.version(11);
-    std::stringstream target; target << url_parts_.path << "?" << url_parts_.parameters << parameters_.content;
+    std::stringstream target; target << url_parts_.path;
+    if ( !url_parts_.parameters.empty() || !parameters_.content.empty() ) {
+      target << "?" << url_parts_.parameters << parameters_.content;
+    }
     req_.target(target.str());
     req_.set(http::field::host, url_parts_.host);
     req_.set(http::field::user_agent, "xxhr/v0.0.1"); //TODO: add a way to override from user and make a version macro
+    req_.prepare_payload(); // Compute Content-Length and related headers
 
     if (url_parts_.https()) {
       stream_.emplace<ssl::stream<tcp::socket>>(ioc, ctx);
@@ -488,16 +481,15 @@ Simple file.
       timeouter.async_wait(std::bind(&Session::Impl::on_timeout, shared_from_this(), std::placeholders::_1)); 
     }
 
-    ioc.run();
   }
 
-  void Session::Impl::DELETE()  { this->QUERY(http::verb::delete_); }
-  void Session::Impl::GET()     { this->QUERY(http::verb::get); }
-  void Session::Impl::HEAD()    { this->QUERY(http::verb::head); }
-  void Session::Impl::OPTIONS() { this->QUERY(http::verb::options); }
-  void Session::Impl::PATCH()   { this->QUERY(http::verb::patch); }
-  void Session::Impl::POST()    { this->QUERY(http::verb::post); }
-  void Session::Impl::PUT()     { this->QUERY(http::verb::put); }
+  void Session::Impl::DELETE_()  { this->QUERY(http::verb::delete_); ioc.run(); }
+  void Session::Impl::GET()     { this->QUERY(http::verb::get); ioc.run();}
+  void Session::Impl::HEAD()    { this->QUERY(http::verb::head); ioc.run();}
+  void Session::Impl::OPTIONS() { this->QUERY(http::verb::options); ioc.run();}
+  void Session::Impl::PATCH()   { this->QUERY(http::verb::patch); ioc.run();}
+  void Session::Impl::POST()    { this->QUERY(http::verb::post); ioc.run();}
+  void Session::Impl::PUT()     { this->QUERY(http::verb::put); ioc.run();}
 
 
 
@@ -513,17 +505,13 @@ Simple file.
   void Session::SetTimeout(const Timeout& timeout) { pimpl_->SetTimeout(timeout); }
   void Session::SetAuth(const Authentication& auth) { pimpl_->SetAuth(auth); }
   void Session::SetDigest(const Digest& auth) { pimpl_->SetDigest(auth); }
-  void Session::SetPayload(const Payload& payload) { pimpl_->SetPayload(payload); }
-  void Session::SetPayload(Payload&& payload) { pimpl_->SetPayload(std::move(payload)); }
-  void Session::SetProxies(const Proxies& proxies) { pimpl_->SetProxies(proxies); }
-  void Session::SetProxies(Proxies&& proxies) { pimpl_->SetProxies(std::move(proxies)); }
   void Session::SetMultipart(const Multipart& multipart) { pimpl_->SetMultipart(multipart); }
   void Session::SetMultipart(Multipart&& multipart) { pimpl_->SetMultipart(std::move(multipart)); }
   void Session::SetRedirect(const bool& redirect) { pimpl_->SetRedirect(redirect); }
   void Session::SetMaxRedirects(const MaxRedirects& max_redirects) { pimpl_->SetMaxRedirects(max_redirects); }
   void Session::SetCookies(const Cookies& cookies) { pimpl_->SetCookies(cookies); }
   void Session::SetBody(const Body& body) { pimpl_->SetBody(body); }
-  void Session::SetBody(Body&& body) { pimpl_->SetBody(std::move(body)); }
+  void Session::SetBody(Body&& body) { pimpl_->SetBody(body); }
   void Session::SetOption(const Url& url) { pimpl_->SetUrl(url); }
   void Session::SetOption(const Parameters& parameters) { pimpl_->SetParameters(parameters); }
   void Session::SetOption(Parameters&& parameters) { pimpl_->SetParameters(std::move(parameters)); }
@@ -531,10 +519,6 @@ Simple file.
   void Session::SetOption(const Timeout& timeout) { pimpl_->SetTimeout(timeout); }
   void Session::SetOption(const Authentication& auth) { pimpl_->SetAuth(auth); }
   void Session::SetOption(const Digest& auth) { pimpl_->SetDigest(auth); }
-  void Session::SetOption(const Payload& payload) { pimpl_->SetPayload(payload); }
-  void Session::SetOption(Payload&& payload) { pimpl_->SetPayload(std::move(payload)); }
-  void Session::SetOption(const Proxies& proxies) { pimpl_->SetProxies(proxies); }
-  void Session::SetOption(Proxies&& proxies) { pimpl_->SetProxies(std::move(proxies)); }
   void Session::SetOption(const Multipart& multipart) { pimpl_->SetMultipart(multipart); }
   void Session::SetOption(Multipart&& multipart) { pimpl_->SetMultipart(std::move(multipart)); }
   void Session::SetOption(const bool& redirect) { pimpl_->SetRedirect(redirect); }
@@ -546,7 +530,7 @@ Simple file.
   template<class Handler>
   void Session::SetOption(const on_response_<Handler>&& on_response) {pimpl_->SetHandler(std::move(on_response)); }
 
-  void Session::DELETE()  { pimpl_->DELETE(); }
+  void Session::DELETE_()  { pimpl_->DELETE_(); }
   void Session::GET()     { pimpl_->GET(); }
   void Session::HEAD()    { pimpl_->HEAD(); }
   void Session::OPTIONS() { pimpl_->OPTIONS(); }

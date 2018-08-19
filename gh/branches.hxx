@@ -10,7 +10,7 @@
 
 #include <xxhr/xxhr.hpp>
 
-namespace gh::repo {
+namespace gh::repos {
 
   //! Branch details
   struct branch_t {
@@ -29,33 +29,33 @@ namespace gh::repo {
     //std::string protection_url;
   };
 
-  //! Branches in a repo
+  //! Branches in a repos
   using branches = std::vector<branch_t>;
 
 }
 
-BOOST_FUSION_ADAPT_STRUCT(gh::repo::branch_t::commit_t, sha, url);
-BOOST_FUSION_ADAPT_STRUCT(gh::repo::branch_t, name, commit);
+BOOST_FUSION_ADAPT_STRUCT(gh::repos::branch_t::commit_t, sha, url);
+BOOST_FUSION_ADAPT_STRUCT(gh::repos::branch_t, name, commit);
 
 namespace gh {
 
   /**
-   * \brief list github branches, passing them to the handler as std::vector<branch_t>.
+   * \brief list github branches, passing them to the result_handler as std::vector<branch_t>.
    *        See https://developer.github.com/v3/repos/branches/#list-branches 
    * \param owner
-   * \param repo 
-   * \param handler Callable with signature : `func(std::vector<branch_t>)`
+   * \param repos 
+   * \param result_handler Callable with signature : `func(std::vector<branch_t>)`
    */
-  inline void list_branches(const std::string& owner, const std::string& repo, auto&& handler) {
+  inline void list_branches(const std::string& owner, const std::string& repos, auto&& result_handler) {
 
     using namespace xxhr;
-    auto url = "https://api.github.com/repos/"s + owner + "/" + repo + "/branches"s;
+    auto url = "https://api.github.com/repos/"s + owner + "/" + repos + "/branches"s;
     GET(url,
       Authentication{"daminetreg", "5c8bc510c7880fcb0db28410218665d707564b3f"}, 
       on_response = [&](auto&& resp) {
         
         if (!resp.error) {
-          handler(pre::json::from_json<repo::branches>(resp.text));
+          result_handler(pre::json::from_json<repos::branches>(resp.text));
         } else {
           throw std::runtime_error(url + " is not responding");
         }

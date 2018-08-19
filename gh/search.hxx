@@ -8,43 +8,10 @@
 #include <boost/fusion/include/adapt_struct.hpp>
 
 #include <xxhr/xxhr.hpp>
-#include <xxhr/apisync.hpp>
 
-namespace gh {
+#include <gh/owner.hxx>
 
-  /**
-   * \brief Repository owner, typically a github user or organization.
-   */ 
-  struct owner_t {
-    uint64_t id;
-    std::string login;
-    bool site_admin{};
-    std::string type;
-    std::string avatar_url;
-    std::string events_url;
-    std::string followers_url;
-    std::string following_url;
-    std::string gists_url;
-    std::string gravatar_id;
-    std::string html_url;
-    std::string node_id;
-    std::string organizations_url;
-    std::string received_events_url;
-    std::string repos_url;
-    std::string starred_url;
-    std::string subscriptions_url;
-    std::string url;
-  };
-
-}
-
-BOOST_FUSION_ADAPT_STRUCT(gh::owner_t,
-  id, login, site_admin, type, avatar_url, events_url,
-  followers_url,following_url,gists_url,gravatar_id,html_url,
-  node_id,organizations_url,received_events_url,repos_url,
-  starred_url,subscriptions_url,url);
-
-namespace gh {
+namespace gh::code_search {
   /**
    * \brief repository as found in result lists.
    */ 
@@ -99,10 +66,10 @@ namespace gh {
     std::string teams_url;
     std::string trees_url;
     std::string url;
-    
+
   };
 }
-BOOST_FUSION_ADAPT_STRUCT(gh::repository_t,
+BOOST_FUSION_ADAPT_STRUCT(gh::code_search::repository_t,
   id, full_name, name, /*private_,*/ fork, owner,
   archive_url, assignees_url, blobs_url, collaborators_url,
   comments_url, commits_url, compare_url, contents_url,
@@ -126,7 +93,7 @@ namespace gh::code_search {
     std::string html_url;
     double score;
     std::string sha;
-    gh::repository_t repository;
+    gh::code_search::repository_t repository;
   };
     
   using results = std::list<result>;
@@ -142,20 +109,22 @@ namespace gh {
   /**
    * \brief Provides access to the github search API v3
    * \param the results as a JSON object.
+   * \param result_handler
    */
-  inline code_search::results query_code_search(const std::string& criteria) {
-
-    xxhr::sync sync_;
-    xxhr::GET(xxhr::Url{"https://api.github.com/search/code"}, xxhr::Parameters{{"q", criteria}}, 
-        xxhr::Authentication{"daminetreg", "5c8bc510c7880fcb0db28410218665d707564b3f"},
-        xxhr::on_response = sync_);
-    auto response = sync_();
-
-    std::cout << response.url << response.status_code << " found - " << response.text << std::endl;
-    auto found = response.text;
-
-//    auto found = gh::detail::http_get("api.github.com", "443", std::string("/search/code?q=") + xxhr::util::urlEncode(criteria) );
-    auto found_json = nlohmann::json::parse(found)["items"];
-    return pre::json::from_json<code_search::results>(found_json);
+  inline void query_code_search(const std::string& criteria,  std::function<void(code_search::results&&)>&& result_handler) {
+  
+    using namespace xxhr;
+    auto url = "https://api.github.com/search/code"s;
+    xxhr::GET(url, xxhr::Parameters{{"q", criteria}}, 
+      xxhr::Authentication{"daminetreg", "5c8bc510c7880fcb0db28410218665d707564b3f"},
+      xxhr::on_response = [&](auto&& resp) {
+        if (!resp.error) {
+          auto found_json = nlohmann::json::parse(resp.text)["items"];
+          result_handler(pre::json::from_json<code_search::results>(found_json));
+        } else {
+          throw std::runtime_error( std::string(resp.error) + " accessing : "s + url );
+        }
+      }
+    );
   }
 }

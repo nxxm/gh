@@ -6,7 +6,7 @@ As of today nxxm::gh is incomplete, but is really easy to extend. We welcome you
 
 - [Github Code Search : `#include <gh/search.hxx>`](https://developer.github.com/v3/search/#search-code)
 - Github Repositories (partly)
-  - [Get repo : `#include <gh/repo.hxx>`](https://developer.github.com/v3/repos/#get)
+  - [Get repo : `#include <gh/repos.hxx>`](https://developer.github.com/v3/repos/#get)
   - [List branches `#include <gh/branches.hxx>`](https://developer.github.com/v3/repos/branches/#list-branches)
 
 ## Roadmap

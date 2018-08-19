@@ -1,4 +1,4 @@
-#include <gh/repo.hxx>
+#include <gh/repos.hxx>
 #include <pre/json/to_json.hpp>
 
 int main(int argc, char** argv) {

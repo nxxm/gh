@@ -23,9 +23,17 @@
 #   -  : same as above but with a guaranteed end slash.
 #
 
+##### PLATFORM Provided Libraries #####
+include("cmake/HunterGate.cmake")
+HunterGate(
+    URL "https://github.com/ruslo/hunter/archive/v0.23.10.tar.gz"
+    SHA1 "1233baf66650caf986d509b6985bcfa23cd7c519"
+)
+##### PLATFORM Provided Libraries #####
+
 cmake_minimum_required(VERSION 3.5.0)
 
-project(xxhr VERSION "0.0.1")
+project(xxhr VERSION "0.0.2")
 enable_testing()
 
 # Compile with shipped-with headers or without 
@@ -34,6 +42,7 @@ option(INGLUED "Enable use of #inglued shipped with dependencies." ON)
 # Compile unit tests
 option(UNIT_TESTS "Enable Unit Testing" OFF)
 
+add_compile_options(-std=c++17)
 
 # Warning as errors to ensure xxhr quality
 string(TOUPPER "${CMAKE_CXX_COMPILER_ID}" COMPILER_IN_USE)
@@ -46,9 +55,9 @@ if ("${COMPILER_IN_USE}" STREQUAL "GNU" OR "${COMPILER_IN_USE}" MATCHES "CLANG")
   )
 endif()
 
-# XXX: nxxm cannot ship this for the moment. An option would be to ship it with nxxm until headerizer is finished.
-add_definitions(-DBOOST_ERROR_CODE_HEADER_ONLY)
 find_package(Threads REQUIRED)
+
+hunter_add_package(OpenSSL)
 find_package(OpenSSL REQUIRED)
 
 
@@ -527,7 +536,8 @@ include_directories(BEFORE ${CMAKE_CURRENT_LIST_DIR})
 add_library(xxhr INTERFACE)
 add_library(cpp-js::xxhr ALIAS xxhr)
 
-target_link_libraries(xxhr INTERFACE ${OPENSSL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(xxhr INTERFACE OpenSSL::SSL OpenSSL::Crypto ${CMAKE_THREAD_LIBS_INIT})
+target_compile_definitions(xxhr INTERFACE -DBOOST_ERROR_CODE_HEADER_ONLY -DBOOST_ALL_NO_LIB)
 
 set(include_install_dir "include")
 

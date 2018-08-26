@@ -8,6 +8,8 @@
 
 #include <xxhr/xxhr.hpp>
 
+#include <gh/auth.hxx>
+
 namespace gh::git_data {
  
   struct object_t {
@@ -44,12 +46,13 @@ namespace gh {
 
   /**
    * \brief gets the refs that a repo contains (tags and branch heads)
+   * \param auth credentials
    * \param owner
    * \param repository
    * \param filter Whether to list all refs or only tags or branch heads
    * \param result_handler taking a gh::git_data::refs collection.
    */
-  inline void get_refs(const std::string& owner, const std::string& repository,
+  inline void get_refs(auth auth, std::string owner, std::string repository,
     filter_refs filter,
     std::function<void(git_data::refs&&)>&& result_handler) {
   
@@ -63,7 +66,7 @@ namespace gh {
     }
 
     GET(url,
-      Authentication{"daminetreg", "5c8bc510c7880fcb0db28410218665d707564b3f"},
+      Authentication{auth.user, auth.pass},
       on_response = [&](auto&& resp) {
         if ( (!resp.error) && (resp.status_code == 200) ) {
           result_handler(pre::json::from_json<git_data::refs>(resp.text));
@@ -77,12 +80,13 @@ namespace gh {
 
   /**
    * \brief get the ref (tag or branch)
+   * \param auth credentials
    * \param owner
    * \param repository
    * \param ref Name of the ref, either "heads/<branch>" or "tags/<tag>"
    * \param result_handler taking a gh::git_data::refs collection.
    */
-  inline void get_ref(const std::string& owner, const std::string& repository,
+  inline void get_ref(auth auth, std::string owner, std::string repository,
     const std::string& ref,
     std::function<void(git_data::ref_t&&)>&& result_handler) {
   
@@ -91,7 +95,7 @@ namespace gh {
       + "/git/refs/" + ref;
 
     GET(url,
-      Authentication{"daminetreg", "5c8bc510c7880fcb0db28410218665d707564b3f"},
+      Authentication{auth.user, auth.pass},
       on_response = [&](auto&& resp) {
         if ( (!resp.error) && (resp.status_code == 200) ) {
           result_handler(pre::json::from_json<git_data::ref_t>(resp.text));

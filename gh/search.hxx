@@ -9,6 +9,7 @@
 
 #include <xxhr/xxhr.hpp>
 
+#include <gh/auth.hxx>
 #include <gh/owner.hxx>
 
 namespace gh::code_search {
@@ -108,15 +109,16 @@ namespace gh {
 
   /**
    * \brief Provides access to the github search API v3
+   * \param auth credentials
    * \param the results as a JSON object.
    * \param result_handler
    */
-  inline void query_code_search(const std::string& criteria,  std::function<void(code_search::results&&)>&& result_handler) {
+  inline void query_code_search(auth auth, const std::string& criteria,  std::function<void(code_search::results&&)>&& result_handler) {
   
     using namespace xxhr;
     auto url = "https://api.github.com/search/code"s;
     xxhr::GET(url, xxhr::Parameters{{"q", criteria}}, 
-      xxhr::Authentication{"daminetreg", "5c8bc510c7880fcb0db28410218665d707564b3f"},
+      xxhr::Authentication{auth.user, auth.pass},
       xxhr::on_response = [&](auto&& resp) {
         if ( (!resp.error) && (resp.status_code == 200) ) {
           auto found_json = nlohmann::json::parse(resp.text)["items"];

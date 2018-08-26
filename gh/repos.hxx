@@ -10,6 +10,7 @@
 
 #include <xxhr/xxhr.hpp>
 
+#include <gh/auth.hxx>
 #include <gh/owner.hxx>
 #include <gh/branches.hxx>
 
@@ -235,18 +236,19 @@ namespace gh {
 
   /**
    * \brief gets the provided repo and pass it to result_handler otherwise throws.
+   * \param auth credentials
    * \param owner
    * \param repository
    * \param result_handler taking a gh::repos::repository_t
    */
-  inline void repos_get(const std::string& owner, const std::string& repository, 
+  inline void repos_get(auth auth, std::string owner, std::string repository, 
     std::function<void(repos::repository_t&&)>&& result_handler) {
   
     using namespace xxhr;
     auto url = "https://api.github.com/repos/"s + owner + "/" + repository;
 
     GET(url,
-      Authentication{"daminetreg", "5c8bc510c7880fcb0db28410218665d707564b3f"},
+      Authentication{auth.user, auth.pass},
       on_response = [&](auto&& resp) {
         if ( (!resp.error) && (resp.status_code == 200) ) {
           result_handler(pre::json::from_json<repos::repository_t>(resp.text));

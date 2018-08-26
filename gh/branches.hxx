@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <optional>
 
 #include <nlohmann/json.hpp>
 #include <pre/json/from_json.hpp>
@@ -50,19 +51,24 @@ namespace gh {
    * \param repos 
    * \param result_handler Callable with signature : `func(std::vector<branch_t>)`
    */
-  inline void list_branches(auth auth, std::string owner, std::string repos, auto&& result_handler) {
+  inline void list_branches(std::string owner, std::string repos, auto&& result_handler,
+    std::optional<auth> auth = std::nullopt) {
 
     using namespace xxhr;
     auto url = "https://api.github.com/repos/"s + owner + "/" + repos + "/branches"s;
-    GET(url,
-      Authentication{auth.user, auth.pass}, 
-      on_response = [&](auto&& resp) {
-        if ( (!resp.error) && (resp.status_code == 200) ) {
-          result_handler(pre::json::from_json<repos::branches>(resp.text));
-        } else {
-          throw std::runtime_error(url + " is not responding");
-        }
+    auto response_handler = [&](auto&& resp) {
+      if ( (!resp.error) && (resp.status_code == 200) ) {
+        result_handler(pre::json::from_json<repos::branches>(resp.text));
+      } else {
+        throw std::runtime_error(url + " is not responding");
       }
-    );
+    };
+
+    if (auth) {
+      GET(url, Authentication{auth->user, auth->pass},
+        on_response = response_handler);
+    } else {
+      GET(url, on_response = response_handler);
+    }
   }
 }

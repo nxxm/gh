@@ -113,20 +113,27 @@ namespace gh {
    * \param the results as a JSON object.
    * \param result_handler
    */
-  inline void query_code_search(auth auth, const std::string& criteria,  std::function<void(code_search::results&&)>&& result_handler) {
+  inline void query_code_search(const std::string& criteria,  std::function<void(code_search::results&&)>&& result_handler,
+      auth auth) {
   
     using namespace xxhr;
     auto url = "https://api.github.com/search/code"s;
-    xxhr::GET(url, xxhr::Parameters{{"q", criteria}}, 
-      xxhr::Authentication{auth.user, auth.pass},
-      xxhr::on_response = [&](auto&& resp) {
-        if ( (!resp.error) && (resp.status_code == 200) ) {
-          auto found_json = nlohmann::json::parse(resp.text)["items"];
-          result_handler(pre::json::from_json<code_search::results>(found_json));
-        } else {
-          throw std::runtime_error( std::string(resp.error) + " accessing : "s + url );
-        }
+
+    auto response_handler = [&](auto&& resp) {
+      if ( (!resp.error) && (resp.status_code == 200) ) {
+        auto found_json = nlohmann::json::parse(resp.text)["items"];
+        result_handler(pre::json::from_json<code_search::results>(found_json));
+      } else {
+        throw std::runtime_error( std::string(resp.error) 
+            + ", status : " + std::to_string(resp.status_code) 
+            + ". accessing : "s + url + ":\n"
+            + resp.text );
       }
-    );
-  }
+    };
+
+    GET(url,
+      xxhr::Parameters{{"q", criteria}},
+      Authentication{auth.user, auth.pass},
+      on_response = response_handler);
+   }
 }

@@ -12,19 +12,21 @@ int main(int argc, char** argv) {
 
   {
     std::cout << "pre ::: " << std::endl;
-    gh::query_code_search(auth, "utils.hpp path:pre/bytes/",
+    gh::query_code_search( "utils.hpp path:pre/bytes/",
       [](auto&& possibles) {
         std::cout << pre::json::to_json(possibles).dump(2) << std::endl;
-      }
+      },
+      auth
     );
   }
 
   {
     std::cout << "fusion ::: " << std::endl;
-    gh::query_code_search(auth, "adapt_struct.hpp path:boost/fusion/include",
+    gh::query_code_search("adapt_struct.hpp path:boost/fusion/include",
       [](auto&& possibles) {
         std::cout << pre::json::to_json(possibles).dump(2) << std::endl;
-      }
+      },
+      auth 
     );
   }
 

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <optional>
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <pre/json/from_json.hpp>
 
@@ -52,9 +53,10 @@ namespace gh {
    * \param filter Whether to list all refs or only tags or branch heads
    * \param result_handler taking a gh::git_data::refs collection.
    */
-  inline void get_refs(auth auth, std::string owner, std::string repository,
+  inline void get_refs(std::string owner, std::string repository,
     filter_refs filter,
-    std::function<void(git_data::refs&&)>&& result_handler) {
+    std::function<void(git_data::refs&&)>&& result_handler,
+    std::optional<auth> auth = std::nullopt) {
   
     using namespace xxhr;
     auto url = "https://api.github.com/repos/"s + owner + "/" + repository + "/git/refs/";
@@ -65,17 +67,22 @@ namespace gh {
       url += "heads";
     }
 
-    GET(url,
-      Authentication{auth.user, auth.pass},
-      on_response = [&](auto&& resp) {
-        if ( (!resp.error) && (resp.status_code == 200) ) {
-          result_handler(pre::json::from_json<git_data::refs>(resp.text));
-        } else {
-          throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
-              + std::to_string(resp.status_code) + " accessing : "s + url );
-        }
+    auto response_handler = [&](auto&& resp) {
+      if ( (!resp.error) && (resp.status_code == 200) ) {
+        result_handler(pre::json::from_json<git_data::refs>(resp.text));
+      } else {
+        throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
+            + std::to_string(resp.status_code) + " accessing : "s + url );
       }
-    );
+    };
+
+    if (auth) {
+      GET(url, Authentication{auth->user, auth->pass},
+        on_response = response_handler
+      );
+    } else {
+      GET(url, on_response = response_handler);
+    }
   }
 
   /**
@@ -86,25 +93,31 @@ namespace gh {
    * \param ref Name of the ref, either "heads/<branch>" or "tags/<tag>"
    * \param result_handler taking a gh::git_data::refs collection.
    */
-  inline void get_ref(auth auth, std::string owner, std::string repository,
+  inline void get_ref(std::string owner, std::string repository,
     const std::string& ref,
-    std::function<void(git_data::ref_t&&)>&& result_handler) {
+    std::function<void(git_data::ref_t&&)>&& result_handler,
+    std::optional<auth> auth = std::nullopt) {
   
     using namespace xxhr;
     auto url = "https://api.github.com/repos/"s + owner + "/" + repository
       + "/git/refs/" + ref;
 
-    GET(url,
-      Authentication{auth.user, auth.pass},
-      on_response = [&](auto&& resp) {
-        if ( (!resp.error) && (resp.status_code == 200) ) {
-          result_handler(pre::json::from_json<git_data::ref_t>(resp.text));
-        } else {
-          throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
-              + std::to_string(resp.status_code) + " accessing : "s + url );
-        }
+    auto response_handler = [&](auto&& resp) {
+      if ( (!resp.error) && (resp.status_code == 200) ) {
+        result_handler(pre::json::from_json<git_data::ref_t>(resp.text));
+      } else {
+        throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
+            + std::to_string(resp.status_code) + " accessing : "s + url );
       }
-    );
+    };
+
+    if (auth) {
+      GET(url, Authentication{auth->user, auth->pass},
+        on_response = response_handler);
+    } else {
+      GET(url, on_response = response_handler);
+    }
+
   }
 
 

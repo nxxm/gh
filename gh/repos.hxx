@@ -152,7 +152,7 @@ namespace gh::repos {
     std::string created_at;
     std::string updated_at;
 
-    permissions_t permissions;
+    std::optional<permissions_t> permissions;
     std::optional<bool> allow_rebase_merge;
     std::optional<bool> allow_squash_merge;
     std::optional<bool> allow_merge_commit;
@@ -241,23 +241,31 @@ namespace gh {
    * \param repository
    * \param result_handler taking a gh::repos::repository_t
    */
-  inline void repos_get(auth auth, std::string owner, std::string repository, 
-    std::function<void(repos::repository_t&&)>&& result_handler) {
+  inline void repos_get(std::string owner, std::string repository, 
+    std::function<void(repos::repository_t&&)>&& result_handler,
+    std::optional<auth> auth = std::nullopt) {
   
     using namespace xxhr;
     auto url = "https://api.github.com/repos/"s + owner + "/" + repository;
 
-    GET(url,
-      Authentication{auth.user, auth.pass},
-      on_response = [&](auto&& resp) {
-        if ( (!resp.error) && (resp.status_code == 200) ) {
-          result_handler(pre::json::from_json<repos::repository_t>(resp.text));
-        } else {
-          throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
-              + std::to_string(resp.status_code) + " accessing : "s + url );
-        }
+    auto response_handler = [&](auto&& resp) {
+      if ( (!resp.error) && (resp.status_code == 200) ) {
+        result_handler(pre::json::from_json<repos::repository_t>(resp.text));
+      } else {
+        throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
+            + std::to_string(resp.status_code) + " accessing : "s + url );
       }
-    );
+    };
+
+
+    if (auth) {
+      GET(url,
+        Authentication{auth->user, auth->pass},
+        on_response = response_handler);
+    } else {
+      GET(url,
+        on_response = response_handler);
+    }
   }
 
 }

@@ -11,5 +11,9 @@ int main(int argc, char** argv) {
     std::cout << pre::json::to_json(r).dump(2) << std::endl;
   });
 
+  gh::repos_get("lazytiger", "gumbo-query", [](gh::repos::repository_t&& r) {
+    std::cout << pre::json::to_json(r).dump(2) << std::endl;
+  });
+
   return 0;
 }

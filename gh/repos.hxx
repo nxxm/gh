@@ -152,9 +152,9 @@ namespace gh::repos {
     std::string updated_at;
 
     permissions_t permissions;
-    bool allow_rebase_merge;
-    bool allow_squash_merge;
-    bool allow_merge_commit;
+    std::optional<bool> allow_rebase_merge;
+    std::optional<bool> allow_squash_merge;
+    std::optional<bool> allow_merge_commit;
     size_t subscribers_count;
     size_t network_count;
     std::optional<license_t> license;

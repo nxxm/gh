@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <functional>
 
-#include <nlohmann/json.hpp>
 #include <pre/json/from_json.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
 
@@ -51,7 +51,7 @@ namespace gh {
    * \param repos 
    * \param result_handler Callable with signature : `func(std::vector<branch_t>)`
    */
-  inline void list_branches(std::string owner, std::string repos, auto&& result_handler,
+  inline void list_branches(std::string owner, std::string repos, std::function<void(repos::branches&&)>&& result_handler,
     std::optional<auth> auth = std::nullopt) {
 
     using namespace xxhr;

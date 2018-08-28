@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <functional>
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <pre/json/from_json.hpp>
 

@@ -153,8 +153,8 @@ namespace gh::repos {
     std::optional<bool> allow_rebase_merge;
     std::optional<bool> allow_squash_merge;
     std::optional<bool> allow_merge_commit;
-    size_t subscribers_count;
-    size_t network_count;
+    std::optional<size_t> subscribers_count;
+    std::optional<size_t> network_count;
     std::optional<license_t> license;
 
     std::optional<organization_t> organization;

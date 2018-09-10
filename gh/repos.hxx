@@ -34,19 +34,17 @@ namespace gh::repos {
     std::string name;
     std::optional<std::string> spdx_id;
     std::optional<std::string> url;
-    std::string node_id;
   };
 }
 
 BOOST_FUSION_ADAPT_STRUCT(gh::repos::license_t,
-  key, name, spdx_id, url, node_id);
+  key, name, spdx_id, url);
 
 namespace gh::repos {
 
   struct organization_t {
     std::string login;
     size_t id;
-    std::string node_id;
     std::string avatar_url;
     std::string gravatar_id;
     std::string url;
@@ -67,7 +65,7 @@ namespace gh::repos {
 }
 
 BOOST_FUSION_ADAPT_STRUCT(gh::repos::organization_t,
-  login, id, node_id, avatar_url, gravatar_id, url, html_url, 
+  login, id, avatar_url, gravatar_id, url, html_url, 
   followers_url, following_url, gists_url, starred_url, 
   subscriptions_url, organizations_url, repos_url, events_url,
   received_events_url, type, site_admin);
@@ -79,7 +77,6 @@ namespace gh::repos {
    */ 
   struct basic_repository_t {
     uint64_t id;
-    std::string node_id;
 
     //! name of the form org/repo or owner/repo
     std::string full_name;
@@ -147,7 +144,7 @@ namespace gh::repos {
     bool has_wiki;
     bool has_pages;
     bool has_downloads;
-    bool archived;
+    std::optional<bool> archived;
     std::string pushed_at;
     std::string created_at;
     std::string updated_at;
@@ -171,7 +168,7 @@ namespace gh::repos {
 }
 
 BOOST_FUSION_ADAPT_STRUCT(gh::repos::basic_repository_t,
-  (auto, id) (auto,node_id) (auto, full_name) (auto, name)
+  (auto, id) (auto, full_name) (auto, name)
   /*(auto, private_)*/ (auto, fork) (auto, owner) 
   (auto, description)
 
@@ -202,7 +199,7 @@ BOOST_FUSION_ADAPT_STRUCT(gh::repos::basic_repository_t,
 
 
 BOOST_FUSION_ADAPT_STRUCT(gh::repos::repository_t, 
-  (auto, id) (auto,node_id) (auto, full_name) (auto, name)
+  (auto, id) (auto, full_name) (auto, name)
   /*(auto, private_)*/ (auto, fork) (auto, owner) 
   (auto, description)
 
@@ -234,6 +231,8 @@ BOOST_FUSION_ADAPT_STRUCT(gh::repos::repository_t,
 
 namespace gh {
 
+  using namespace std::string_literals;
+
   /**
    * \brief gets the provided repo and pass it to result_handler otherwise throws.
    * \param auth credentials
@@ -243,10 +242,12 @@ namespace gh {
    */
   inline void repos_get(std::string owner, std::string repository, 
     std::function<void(repos::repository_t&&)>&& result_handler,
-    std::optional<auth> auth = std::nullopt) {
+    std::optional<auth> auth = std::nullopt,
+    const std::string& api_endpoint = "https://api.github.com"s ) {
+
   
     using namespace xxhr;
-    auto url = "https://api.github.com/repos/"s + owner + "/" + repository;
+    auto url = api_endpoint + "/repos/"s + owner + "/" + repository;
 
     auto response_handler = [&](auto&& resp) {
       if ( (!resp.error) && (resp.status_code == 200) ) {

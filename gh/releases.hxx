@@ -126,7 +126,6 @@ namespace gh {
 
     auto response_handler = [&](auto&& resp) {
       if ( (!resp.error) && (resp.status_code == 200) ) {
-        std::cout << "resp : " << resp.text << std::endl;
         result_handler(pre::json::from_json<releases::release_t>(resp.text));
       } else {
         throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 

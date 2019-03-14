@@ -22,7 +22,6 @@ namespace gh {
     std::string gists_url;
     std::string gravatar_id;
     std::string html_url;
-    std::string node_id;
     std::string organizations_url;
     std::string received_events_url;
     std::string repos_url;
@@ -36,6 +35,6 @@ namespace gh {
 BOOST_FUSION_ADAPT_STRUCT(gh::owner_t,
   id, login, site_admin, type, avatar_url, events_url,
   followers_url,following_url,gists_url,gravatar_id,html_url,
-  node_id,organizations_url,received_events_url,repos_url,
+  organizations_url,received_events_url,repos_url,
   starred_url,subscriptions_url,url);
 

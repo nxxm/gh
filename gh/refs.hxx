@@ -22,7 +22,6 @@ namespace gh::git_data {
 
   struct ref_t {
     std::string ref;
-    std::string node_id;
     std::string url;
     object_t object;
   };
@@ -31,10 +30,12 @@ namespace gh::git_data {
 }
 
 BOOST_FUSION_ADAPT_STRUCT(gh::git_data::object_t, type, sha, url);
-BOOST_FUSION_ADAPT_STRUCT(gh::git_data::ref_t, ref, node_id, url, object);
+BOOST_FUSION_ADAPT_STRUCT(gh::git_data::ref_t, ref, url, object);
 
 
 namespace gh {
+
+  using namespace std::string_literals;
 
   //! filter references based on their types
   enum class filter_refs {
@@ -57,10 +58,11 @@ namespace gh {
   inline void get_refs(std::string owner, std::string repository,
     filter_refs filter,
     std::function<void(git_data::refs&&)>&& result_handler,
-    std::optional<auth> auth = std::nullopt) {
+    std::optional<auth> auth = std::nullopt,
+    const std::string& api_endpoint = "https://api.github.com"s ) {
   
     using namespace xxhr;
-    auto url = "https://api.github.com/repos/"s + owner + "/" + repository + "/git/refs/";
+    auto url = api_endpoint + "/repos/"s + owner + "/" + repository + "/git/refs/";
 
     if (filter == filter_refs::TAGS) {
       url += "tags";
@@ -97,10 +99,11 @@ namespace gh {
   inline void get_ref(std::string owner, std::string repository,
     const std::string& ref,
     std::function<void(git_data::ref_t&&)>&& result_handler,
-    std::optional<auth> auth = std::nullopt) {
+    std::optional<auth> auth = std::nullopt,
+    const std::string& api_endpoint = "https://api.github.com"s ) {
   
     using namespace xxhr;
-    auto url = "https://api.github.com/repos/"s + owner + "/" + repository
+    auto url = api_endpoint + "/repos/"s + owner + "/" + repository
       + "/git/refs/" + ref;
 
     auto response_handler = [&](auto&& resp) {

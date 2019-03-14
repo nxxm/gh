@@ -1,0 +1,5 @@
+{
+   "daminetreg/xxhr" : { "@" : "feature/nxxm-migration" }
+   , "cpp-pre/json" : { "@" : "feature/nxxm-migration"  }
+   , "cpp-pre/type_traits" : {   }
+}

@@ -45,7 +45,7 @@ namespace gh::repos {
     std::optional<std::string> closed_at;
     std::string created_at;
     std::optional<std::string> updated_at;
-    std::string due_on;
+    std::optional<std::string> due_on;
   };
 
 }

@@ -149,4 +149,37 @@ namespace gh {
 
 
   }
+
+  inline void get_issue(std::string owner, std::string repository, uint64_t issue_number,
+    std::function<void(repos::issue_t&&)>&& result_handler,
+    std::optional<auth> auth = std::nullopt,
+    const std::string& api_endpoint = "https://api.github.com"s ) {
+
+    using namespace xxhr;
+    auto url = api_endpoint + "/repos/"s + owner + "/" + repository + "/issues/" + std::to_string(issue_number);
+
+    auto response_handler = [&](auto&& resp) {
+      if ( (!resp.error) && (resp.status_code == 200) ) {
+        result_handler(pre::json::from_json<repos::issue_t>(resp.text));
+      } else {
+        throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
+            + std::to_string(resp.status_code) + " accessing : "s + url );
+      }
+    };
+
+
+    if (auth) {
+      GET(url,
+        Authentication{auth->user, auth->pass},
+        on_response = response_handler);
+    } else {
+      GET(url,
+        on_response = response_handler);
+    }
+
+
+
+  }
+
+
 }

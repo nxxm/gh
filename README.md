@@ -10,6 +10,7 @@ As of today nxxm::gh is incomplete, but is really easy to extend. We welcome you
 - Github Repositories (partly)
   - [Get repo : `#include <gh/repos.hxx>`](https://developer.github.com/v3/repos/#get)
   - [List branches `#include <gh/branches.hxx>`](https://developer.github.com/v3/repos/branches/#list-branches)
+  - [List issues `#include <gh/issues.hxx>`](https://developer.github.com/v3/issues/#list-issues-for-a-repository)
   - [Releases `#include <gh/releases.hxx>`](https://developer.github.com/v3/repos/releases/#get-the-latest-release)
 
 ## Roadmap
@@ -21,6 +22,6 @@ No roadmap is planned, we use it for our own purpose, any pull-request is welcom
 [MIT License](./LICENSE), please give copyright notice to : 
 
 ```
-Copyright (c) 2018 Damien Buhl alias daminetreg
+Copyright (c) 2018-present Damien Buhl alias daminetreg
 ```
 

@@ -1,5 +1,5 @@
 {
    "nxxm/xxhr" : { }
    , "cpp-pre/json" : { "@" : "feature/nxxm-migration"  }
-   , "cpp-pre/type_traits" : {   }
+   , "cpp-pre/type_traits" : { "@" : "v2.0.0" }
 }

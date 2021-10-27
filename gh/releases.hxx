@@ -144,5 +144,43 @@ namespace gh {
     }
   }
 
-}
 
+  /**
+   * \brief gets the provided repo and pass it to result_handler otherwise throws.
+   * \param auth credentials
+   * \param owner
+   * \param repository
+   * \param tag tag of the release you are looking for 
+   * \param result_handler taking a gh::repos::repository_t
+   */
+  inline void get_release_by_tag(std::string owner, std::string repository,std::string tag,
+    std::function<void(releases::release_t&&)>&& result_handler,
+    std::optional<auth> auth = std::nullopt,
+    const std::string& api_endpoint = "https://api.github.com"s ) {
+
+  
+    using namespace xxhr;
+    auto url = api_endpoint + "/repos/"s + owner + "/" + repository + "/releases/tags/"+tag;
+
+    auto response_handler = [&](auto&& resp) {
+      if ( (!resp.error) && (resp.status_code == 200) ) {
+        result_handler(pre::json::from_json<releases::release_t>(resp.text));
+
+      } else {
+        throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
+            + std::to_string(resp.status_code) + " accessing : "s + url );
+      }
+    };
+
+
+    if (auth) {
+      GET(url,
+        Authentication{auth->user, auth->pass},
+         on_response = response_handler);
+    } else {
+      GET(url,
+        on_response = response_handler);
+    }
+  }
+
+}

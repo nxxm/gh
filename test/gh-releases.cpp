@@ -9,6 +9,9 @@ int main(int argc, char** argv) {
     std::cout << pre::json::to_json(r).dump(2) << std::endl;
   });
 
+  gh::get_release_by_tag("tipi-build","cli","v0.0.19", [](gh::releases::release_t&& r) {
+    std::cout << pre::json::to_json(r).dump(2) << std::endl;
+  });
 
   gh::auth auth{ 
     std::getenv("GH_USER"),

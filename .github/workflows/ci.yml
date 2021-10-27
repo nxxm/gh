@@ -5,7 +5,7 @@ jobs:
   build: 
     name: build-linux
     runs-on: ubuntu-latest
-    container: tipi/tipi-ubuntu
+    container: tipibuild/tipi-ubuntu
     env:
       GH_USER: ${{ github.actor }}
       GH_PASS: ${{ secrets.GITHUB_TOKEN }}

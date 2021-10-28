@@ -157,30 +157,36 @@ namespace gh {
     std::function<void(releases::release_t&&)>&& result_handler,
     std::optional<auth> auth = std::nullopt,
     const std::string& api_endpoint = "https://api.github.com"s ) {
-
-  
     using namespace xxhr;
     auto url = api_endpoint + "/repos/"s + owner + "/" + repository + "/releases/tags/"+tag;
+    auto retries_count = 5;
+    std::function<void(xxhr::Response&&)> response_handler;
 
-    auto response_handler = [&](auto&& resp) {
-      if ( (!resp.error) && (resp.status_code == 200) ) {
+
+    auto do_request = [&]() { 
+      if (auth) {
+        GET(url,
+          Authentication{auth->user, auth->pass},
+          on_response = response_handler);
+      } else {
+        GET(url,
+          on_response = response_handler);
+      }
+    };
+
+    response_handler = [&](auto&& resp) {
+      if ( resp.error && (retries_count > 0) ) {
+        --retries_count;
+        do_request();
+      } else if ( (!resp.error) && (resp.status_code == 200) ) {
         result_handler(pre::json::from_json<releases::release_t>(resp.text));
-
       } else {
         throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
             + std::to_string(resp.status_code) + " accessing : "s + url );
       }
     };
 
-
-    if (auth) {
-      GET(url,
-        Authentication{auth->user, auth->pass},
-         on_response = response_handler);
-    } else {
-      GET(url,
-        on_response = response_handler);
-    }
+    do_request();
   }
 
 }

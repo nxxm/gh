@@ -9,13 +9,16 @@ int main(int argc, char** argv) {
     std::cout << pre::json::to_json(r).dump(2) << std::endl;
   });
 
+  gh::get_release_by_tag("tipi-build","cli","v0.0.19", [](gh::releases::release_t&& r) {
+    std::cout << pre::json::to_json(r).dump(2) << std::endl;
+  });
 
   gh::auth auth{ 
     std::getenv("GH_USER"),
     std::getenv("GH_PASS")
   };
 
-  gh::get_latest_release("cpp-pre", "json", [](gh::releases::release_t&& r) {
+  gh::get_latest_release("tipi-build","cli", [](gh::releases::release_t&& r) {
     std::cout << pre::json::to_json(r).dump(2) << std::endl;
   }, auth);
 

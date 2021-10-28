@@ -1,0 +1,19 @@
+name: build 
+on: [push]
+
+jobs:
+  build: 
+    name: build-linux
+    runs-on: ubuntu-latest
+    container: tipibuild/tipi-ubuntu
+    env:
+      GH_USER: ${{ github.actor }}
+      GH_PASS: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: tipi builds project 
+        run: |
+          export HOME=/root
+          mkdir -p ~/.tipi
+          tipi . -t linux-cxx17 --dont-upgrade --verbose --test all 

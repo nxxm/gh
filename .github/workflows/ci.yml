@@ -9,6 +9,8 @@ jobs:
     env:
       GH_USER: ${{ github.actor }}
       GH_PASS: ${{ secrets.GITHUB_TOKEN }}
+      GH_RELEASE_TEST_REPO_OWNER: nxxm
+      GH_RELEASE_TEST_REPO_NAME: test-gh-client-release
     steps:
       - name: checkout
         uses: actions/checkout@v2

@@ -6,6 +6,7 @@
 
 #include <optional>
 #include <pre/json/from_json.hpp>
+#include <pre/json/to_json.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
 
 #include <xxhr/xxhr.hpp>
@@ -59,8 +60,8 @@ namespace gh::releases {
     std::string html_url;
     std::string assets_url;
     std::string upload_url;
-    std::string tarball_url;
-    std::string zipball_url;
+    std::optional<std::string> tarball_url;
+    std::optional<std::string> zipball_url;
     std::size_t id;
 
     std::string tag_name;
@@ -71,13 +72,12 @@ namespace gh::releases {
     bool draft;
     bool prerelease;
     std::string created_at;
-    std::string published_at;
+    std::optional<std::string> published_at;
 
     gh::owner_t author;
 
     assets_t assets;
   };
-
 }
 
 BOOST_FUSION_ADAPT_STRUCT(gh::releases::release_t
@@ -94,7 +94,7 @@ BOOST_FUSION_ADAPT_STRUCT(gh::releases::release_t
   , name
   , body
 
-
+  , draft
   , prerelease
   , created_at
   , published_at
@@ -102,6 +102,33 @@ BOOST_FUSION_ADAPT_STRUCT(gh::releases::release_t
   , author
 
   , assets);
+
+namespace gh::releases {
+  struct create_release_t {   
+
+    std::string tag_name;
+    std::optional<std::string> target_commitish;
+    std::string name;
+    std::string body;
+
+    bool draft;
+    bool prerelease;
+    bool generate_release_notes;
+    
+    std::optional<std::string> discussion_category_name;
+    
+  };
+}
+
+BOOST_FUSION_ADAPT_STRUCT(gh::releases::create_release_t
+  , tag_name
+  , target_commitish
+  , name
+  , body
+  , draft
+  , prerelease
+  , generate_release_notes
+  , discussion_category_name);
 
 
 namespace gh {
@@ -187,6 +214,58 @@ namespace gh {
     };
 
     do_request();
+  }
+
+  /**
+   * @brief Create a github release in a repository
+   * 
+   * @param owner repo owner
+   * @param repository 
+   * @param release 
+   * @param result_handler taking a gh::repos::repository_t
+   * @param auth credentials
+   */
+  inline void create_release(std::string owner, std::string repository, const releases::create_release_t& release, 
+    std::function<void(releases::release_t&&)>&& result_handler, 
+    std::optional<auth> auth = std::nullopt, 
+    const std::string& api_endpoint = "https://api.github.com"s
+  ) {
+    using namespace xxhr;
+
+    auto url = api_endpoint + "/repos/"s + owner + "/" + repository + "/releases";
+    auto retries_count = 5;
+    std::function<void(xxhr::Response&&)> response_handler;
+
+    auto do_request = [&]() { 
+
+      auto header = Header{ { "Content-Type", "application/json" } };
+      auto body = Body{ pre::json::to_json(release).dump() };      
+
+      if (auth) {
+        POST(url,
+          Authentication{auth->user, auth->pass},
+          header,
+          body,
+          on_response = response_handler);
+      } else {
+        POST(url, header, body, on_response = response_handler);
+      }
+    };
+
+    response_handler = [&](auto&& resp) {
+      if ( resp.error && (retries_count > 0) ) {
+        --retries_count;
+        do_request();
+      } else if ( (!resp.error) && (resp.status_code == 200) ) {
+        
+        result_handler(pre::json::from_json<releases::release_t>(resp.text));
+      } else {
+        throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
+            + std::to_string(resp.status_code) + " accessing : "s + url );
+      }
+    };
+
+    do_request();      
   }
 
 }

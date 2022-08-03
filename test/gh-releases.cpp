@@ -29,7 +29,7 @@ std::string get_raw_str_dummyzip() {
 }
 
 int main(int argc, char** argv) {
- 
+
   gh::list_releases("tipi-build", "cli", [](std::vector<gh::releases::release_t>&& r) {
     assertm(r.size() > 10, "tipi-build/cli has more than 10 releases");
 
@@ -97,7 +97,7 @@ int main(int argc, char** argv) {
           .target_commitish = "main",
           .name = "A test release - updated",
           .body = "This is a test release!",
-          .draft = true,
+          .draft = false,
           .prerelease = true
         };
 
@@ -125,10 +125,18 @@ int main(int argc, char** argv) {
                 };
 
                 gh::update_release_asset("nxxm", "test-gh-client-release", new_asset.id, asset_update, 
-                  [&asset_name, &updated_label, &release_id, &auth](gh::releases::asset_t updated_asset) {
+                  [&asset_name, &zip_content, &updated_label, &release_id, &auth](gh::releases::asset_t updated_asset) {
                     assertm(asset_name == updated_asset.name, "Test update_release_asset() : Asset names missmatch");
                     assertm(updated_label == updated_asset.label, "Test update_release_asset() : Asset label missmatch");
 
+                    // test downloading
+                    gh::download_release_asset("nxxm", "test-gh-client-release", updated_asset.id, 
+                      [&zip_content](std::string &&result) {
+                        assertm(result == zip_content, "Test download_release_asset() : contents not equal");
+                      }, 
+                      auth);
+
+                    // deleting stuff
                     gh::delete_release_asset("nxxm", "test-gh-client-release", updated_asset.id, auth);
 
                     gh::delete_release("nxxm", "test-gh-client-release", release_id, auth);

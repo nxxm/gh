@@ -698,7 +698,54 @@ namespace gh {
     do_request();      
   }  
 
+  /**
+   * @brief Download release asset
+   * 
+   * @param owner 
+   * @param repository 
+   * @param asset_id 
+   * @param result_handler 
+   * @param auth 
+   */
+  inline void download_release_asset(const std::string owner, const std::string repository, 
+    const size_t asset_id, std::function<void(std::string)>&& result_handler, 
+    std::optional<auth> auth = std::nullopt,
+    const std::string& api_endpoint = "https://api.github.com"s
+  ) {
+    using namespace xxhr;
+    auto url = api_endpoint + "/repos/"s + owner + "/" + repository + "/releases/assets/" + std::to_string(asset_id);
+    auto retries_count = 5;
+    std::function<void(xxhr::Response&&)> response_handler;
 
+    auto do_request = [&]() { 
 
+      Header header({
+        { "Accept", "application/octet-stream" }
+      });
+  
+      if (auth) {
+        GET(url,
+          header,
+          Authentication{auth->user, auth->pass},
+          on_response = response_handler);
+      } else {
+        GET(url, header, on_response = response_handler);
+      }
 
+    };
+
+    response_handler = [&](auto&& resp) {
+      if ( resp.error && (retries_count > 0) ) {
+        --retries_count;
+        do_request();
+      } else if ( (!resp.error) && (resp.status_code == 200) ) {        
+        result_handler(resp.text);
+      } else {
+        throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
+            + std::to_string(resp.status_code) + " accessing : "s + url );
+      }
+    };
+
+    do_request();
+  } 
 }

@@ -56,7 +56,7 @@ namespace gh::releases {
   struct update_asset_t {
     std::string name;
     std::optional<std::string> label;
-    std::string state;
+    std::optional<std::string> state;
   };
 }
 

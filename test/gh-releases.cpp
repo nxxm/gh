@@ -48,7 +48,6 @@ int main(int argc, char** argv) {
         assertm(asset_by_id.id == asset_id_to_fetch, "Testing gh::get_release_asset_info(): IDs did not match unexpectedly");
       });
 
-
   });
 
   gh::get_latest_release("daminetreg", "trommeli", [](gh::releases::release_t&& r) {
@@ -88,7 +87,7 @@ int main(int argc, char** argv) {
     };
 
     gh::create_release("nxxm", "test-gh-client-release", release_data, 
-      [&release_data,&release_tag,&auth](gh::releases::release_t&& r) {
+      [&release_data, &release_tag, &auth](gh::releases::release_t&& r) {
         assertm(r.tag_name == release_data.tag_name, "Release tag-name shall be the as set");
         assertm(r.name == release_data.name, "Release name shall be the as set");
         assertm(r.draft == release_data.draft, "Release draft status shall be the as set");
@@ -103,26 +102,42 @@ int main(int argc, char** argv) {
         };
 
         gh::update_release("nxxm", "test-gh-client-release", r.id, release_update_data, 
-          [&release_update_data,&release_tag,&auth](gh::releases::release_t&& r) {
+          [&release_update_data, &auth](gh::releases::release_t&& r) {
             assertm(r.name == release_update_data.name, "Release name shall be the as set");
             assertm(r.prerelease == release_update_data.prerelease, "Release prerelease status shall be the as set");
             
             // now upload an empty zip \o/
             const std::string zip_content = get_raw_str_dummyzip();
             const std::string asset_name = "hello-world.zip";
+            const size_t release_id = r.id;
 
             gh::create_release_asset("nxxm", "test-gh-client-release", r.id, 
               asset_name, "Hello world in a zip", zip_content, gh::releases::CONTENT_TYPE_ZIP, 
-              [&asset_name, &zip_content](gh::releases::asset_t new_asset) {
+              [&asset_name, &zip_content, &release_id, &auth](gh::releases::asset_t new_asset) {
                 assertm(asset_name == new_asset.name, "Test create_release_asset() : Asset names missmatch");
                 assertm(zip_content.length() == new_asset.size, "Test create_release_asset() : Asset size/length missmatch");
 
-                
+                // update the label
+                const std::string updated_label = "Hey thats new!!";
+                gh::releases::update_asset_t asset_update{
+                  .name = asset_name,
+                  .label = updated_label
+                };
+
+                gh::update_release_asset("nxxm", "test-gh-client-release", new_asset.id, asset_update, 
+                  [&asset_name, &updated_label, &release_id, &auth](gh::releases::asset_t updated_asset) {
+                    assertm(asset_name == updated_asset.name, "Test update_release_asset() : Asset names missmatch");
+                    assertm(updated_label == updated_asset.label, "Test update_release_asset() : Asset label missmatch");
+
+                    gh::delete_release_asset("nxxm", "test-gh-client-release", updated_asset.id, auth);
+
+                    gh::delete_release("nxxm", "test-gh-client-release", release_id, auth);
+                  },
+                  auth);
               },
               auth);
 
-
-            //gh::delete_release("nxxm", "test-gh-client-release", r.id, auth);
+            //
           },
           auth);
       }, 

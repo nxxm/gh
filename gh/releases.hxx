@@ -104,8 +104,32 @@ BOOST_FUSION_ADAPT_STRUCT(gh::releases::release_t
   , assets);
 
 namespace gh::releases {
-  struct create_release_t {   
+  struct update_release_t {   
 
+    std::string tag_name;
+    std::optional<std::string> target_commitish;
+    std::string name;
+    std::string body;
+
+    bool draft;
+    bool prerelease;
+    
+    std::optional<std::string> discussion_category_name;    
+  };
+}
+
+BOOST_FUSION_ADAPT_STRUCT(gh::releases::update_release_t
+  , tag_name
+  , target_commitish
+  , name
+  , body
+  , draft
+  , prerelease
+  , discussion_category_name);
+
+
+namespace gh::releases {
+  struct create_release_t {   
     std::string tag_name;
     std::optional<std::string> target_commitish;
     std::string name;
@@ -116,7 +140,6 @@ namespace gh::releases {
     bool generate_release_notes;
     
     std::optional<std::string> discussion_category_name;
-    
   };
 }
 
@@ -217,6 +240,52 @@ namespace gh {
   }
 
   /**
+   * @brief List all github releases for a repo
+   * 
+   * @param owner 
+   * @param repository 
+   * @param result_handler 
+   * @param auth 
+   * @param api_endpoint 
+   */
+  inline void list_releases(const std::string owner, const std::string repository,
+    std::function<void(std::vector<releases::release_t>&&)>&& result_handler,
+    std::optional<auth> auth = std::nullopt,
+    const std::string& api_endpoint = "https://api.github.com"s 
+  ) {
+    using namespace xxhr;
+    auto url = api_endpoint + "/repos/"s + owner + "/" + repository + "/releases";
+    auto retries_count = 5;
+    std::function<void(xxhr::Response&&)> response_handler;
+
+
+    auto do_request = [&]() { 
+      if (auth) {
+        GET(url,
+          Authentication{auth->user, auth->pass},
+          on_response = response_handler);
+      } else {
+        GET(url,
+          on_response = response_handler);
+      }
+    };
+
+    response_handler = [&](auto&& resp) {
+      if ( resp.error && (retries_count > 0) ) {
+        --retries_count;
+        do_request();
+      } else if ( (!resp.error) && (resp.status_code == 200) ) {
+        result_handler(pre::json::from_json<std::vector<releases::release_t>>(resp.text));
+      } else {
+        throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
+            + std::to_string(resp.status_code) + " accessing : "s + url );
+      }
+    };
+
+    do_request();
+  }
+
+  /**
    * @brief Create a github release in a repository
    * 
    * @param owner repo owner
@@ -225,7 +294,7 @@ namespace gh {
    * @param result_handler taking a gh::repos::repository_t
    * @param auth credentials
    */
-  inline void create_release(std::string owner, std::string repository, const releases::create_release_t& release, 
+  inline void create_release(const std::string owner, const std::string repository, const releases::create_release_t& release, 
     std::function<void(releases::release_t&&)>&& result_handler, 
     std::optional<auth> auth = std::nullopt, 
     const std::string& api_endpoint = "https://api.github.com"s
@@ -238,7 +307,7 @@ namespace gh {
 
     auto do_request = [&]() { 
 
-      auto header = Header{ { "Content-Type", "application/json" } };
+      auto header = Header{ { "Content-Type", "application/json" }, { "accept", "application/vnd.github+json" } };
       auto body = Body{ pre::json::to_json(release).dump() };      
 
       if (auth) {
@@ -256,9 +325,109 @@ namespace gh {
       if ( resp.error && (retries_count > 0) ) {
         --retries_count;
         do_request();
-      } else if ( (!resp.error) && (resp.status_code == 200) ) {
-        
+      } else if ( (!resp.error) && (resp.status_code == 200) ) {        
         result_handler(pre::json::from_json<releases::release_t>(resp.text));
+      } else {
+        throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
+            + std::to_string(resp.status_code) + " accessing : "s + url );
+      }
+    };
+
+    do_request();      
+  }
+
+  /**
+   * @brief Update a github release
+   * 
+   * @param owner repo owner
+   * @param repository 
+   * @param release_id
+   * @param release 
+   * @param result_handler taking a gh::repos::repository_t
+   * @param auth credentials
+   */
+  inline void update_release(const std::string owner, const std::string repository, const size_t release_id, 
+    const releases::update_release_t& release, 
+    std::function<void(releases::release_t&&)>&& result_handler, 
+    std::optional<auth> auth = std::nullopt, 
+    const std::string& api_endpoint = "https://api.github.com"s
+  ) {
+    using namespace xxhr;
+
+    auto url = api_endpoint + "/repos/"s + owner + "/" + repository + "/releases/" + std::to_string(release_id);
+    auto retries_count = 5;
+    std::function<void(xxhr::Response&&)> response_handler;
+
+    auto do_request = [&]() { 
+
+      auto header = Header{ { "Content-Type", "application/json" }, { "accept", "application/vnd.github+json" } };
+      auto body = Body{ pre::json::to_json(release).dump() };      
+
+      if (auth) {
+        PATCH(url,
+          Authentication{auth->user, auth->pass},
+          header,
+          body,
+          on_response = response_handler);
+      } else {
+        PATCH(url, header, body, on_response = response_handler);
+      }
+    };
+
+    response_handler = [&](auto&& resp) {
+      if ( resp.error && (retries_count > 0) ) {
+        --retries_count;
+        do_request();
+      } else if ( (!resp.error) && (resp.status_code == 200) ) {        
+        result_handler(pre::json::from_json<releases::release_t>(resp.text));
+      } else {
+        throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
+            + std::to_string(resp.status_code) + " accessing : "s + url );
+      }
+    };
+
+    do_request();      
+  }
+
+  /**
+   * @brief Update a github release
+   * 
+   * @param owner repo owner
+   * @param repository 
+   * @param release_id
+   * @param release 
+   * @param result_handler taking a gh::repos::repository_t
+   * @param auth credentials
+   */
+  inline void delete_release(const std::string owner, const std::string repository, const size_t release_id,
+    std::optional<auth> auth = std::nullopt, const std::string& api_endpoint = "https://api.github.com"s
+  ) {
+    using namespace xxhr;
+
+    auto url = api_endpoint + "/repos/"s + owner + "/" + repository + "/releases/" + std::to_string(release_id);
+    auto retries_count = 5;
+    std::function<void(xxhr::Response&&)> response_handler;
+
+    auto do_request = [&]() { 
+
+      auto header = Header{ { "accept", "application/vnd.github+json" } };
+
+      if (auth) {
+        DELETE_(url,
+          Authentication{auth->user, auth->pass},
+          header,
+          on_response = response_handler);
+      } else {
+        DELETE_(url, header, on_response = response_handler);
+      }
+    };
+
+    response_handler = [&](auto&& resp) {
+      if ( resp.error && (retries_count > 0) ) {
+        --retries_count;
+        do_request();
+      } else if ( (!resp.error) && (resp.status_code == 204) ) {
+        // success        
       } else {
         throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
             + std::to_string(resp.status_code) + " accessing : "s + url );

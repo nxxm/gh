@@ -51,6 +51,17 @@ BOOST_FUSION_ADAPT_STRUCT(gh::releases::asset_t,
     uploader
 );
 
+namespace gh::releases {
+
+  struct update_asset_t {
+    std::string name;
+    std::optional<std::string> label;
+    std::string state;
+  };
+}
+
+BOOST_FUSION_ADAPT_STRUCT(gh::releases::update_asset_t, name, label, state);
+
 
 namespace gh::releases {
 
@@ -152,6 +163,19 @@ BOOST_FUSION_ADAPT_STRUCT(gh::releases::create_release_t
   , prerelease
   , generate_release_notes
   , discussion_category_name);
+
+// just a few MIME types...
+namespace gh::releases {
+
+  static inline const std::string CONTENT_TYPE_ZIP = "application/zip";
+  static inline const std::string CONTENT_TYPE_TXT = "text/plain";
+  static inline const std::string CONTENT_TYPE_TAR = "application/x-tar";
+  static inline const std::string CONTENT_TYPE_JSON = "application/json";
+  static inline const std::string CONTENT_TYPE_GZ = "application/gzip";
+  static inline const std::string CONTENT_TYPE_BZ = "application/x-bzip";
+  static inline const std::string CONTENT_TYPE_BZ2 = "application/x-bzip2";
+  static inline const std::string CONTENT_TYPE_7Z = "application/x-7z-compressed";
+}
 
 
 namespace gh {
@@ -444,7 +468,7 @@ namespace gh {
    * @param auth credentials
    */
   inline void delete_release(const std::string owner, const std::string repository, const size_t release_id,
-    std::optional<auth> auth = std::nullopt, const std::string& api_endpoint = "https://api.github.com"s
+    auth auth, const std::string& api_endpoint = "https://api.github.com"s
   ) {
     using namespace xxhr;
 
@@ -456,14 +480,10 @@ namespace gh {
 
       auto header = Header{ { "accept", "application/vnd.github+json" } };
 
-      if (auth) {
-        DELETE_(url,
-          Authentication{auth->user, auth->pass},
-          header,
-          on_response = response_handler);
-      } else {
-        DELETE_(url, header, on_response = response_handler);
-      }
+      DELETE_(url,
+        Authentication{auth.user, auth.pass},
+        header,
+        on_response = response_handler);
     };
 
     response_handler = [&](auto&& resp) {
@@ -481,6 +501,204 @@ namespace gh {
     do_request();      
   }
 
+  /**
+   * @brief List all github releases for a repo
+   * 
+   * @param owner 
+   * @param repository 
+   * @param asset_id
+   * @param result_handler 
+   * @param auth 
+   * @param api_endpoint 
+   */
+  inline void get_release_asset_info(const std::string owner, const std::string repository, size_t asset_id,
+    std::function<void(releases::asset_t&&)>&& result_handler,
+    std::optional<auth> auth = std::nullopt,
+    const std::string& api_endpoint = "https://api.github.com"s 
+  ) {
+    using namespace xxhr;
+    auto url = api_endpoint + "/repos/"s + owner + "/" + repository + "/releases/assets/" + std::to_string(asset_id);
+    auto retries_count = 5;
+    std::function<void(xxhr::Response&&)> response_handler;
+
+
+    auto do_request = [&]() { 
+      if (auth) {
+        GET(url,
+          Authentication{auth->user, auth->pass},
+          on_response = response_handler);
+      } else {
+        GET(url,
+          on_response = response_handler);
+      }
+    };
+
+    response_handler = [&](auto&& resp) {
+      if ( resp.error && (retries_count > 0) ) {
+        --retries_count;
+        do_request();
+      } else if ( (!resp.error) && (resp.status_code == 200) ) {
+        result_handler(pre::json::from_json<releases::asset_t>(resp.text));
+      } else {
+        throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
+            + std::to_string(resp.status_code) + " accessing : "s + url );
+      }
+    };
+
+    do_request();
+  }
+
+  /**
+   * @brief Update a github release asset
+   * 
+   * @param owner repo owner
+   * @param repository 
+   * @param asset_id
+   * @param release 
+   * @param result_handler taking a gh::repos::repository_t
+   * @param auth credentials
+   */
+  inline void update_release_asset(const std::string owner, const std::string repository, const size_t asset_id, 
+    const releases::update_asset_t& release, 
+    std::function<void(releases::asset_t&&)>&& result_handler, 
+    auth auth, 
+    const std::string& api_endpoint = "https://api.github.com"s
+  ) {
+    using namespace xxhr;
+
+    auto url = api_endpoint + "/repos/"s + owner + "/" + repository + "/releases/assets/" + std::to_string(asset_id);
+    auto retries_count = 5;
+    std::function<void(xxhr::Response&&)> response_handler;
+
+    auto do_request = [&]() { 
+
+      auto header = Header{ { "Content-Type", "application/json" }, { "accept", "application/vnd.github+json" } };
+      auto body = Body{ pre::json::to_json(release).dump() };      
+
+      PATCH(url,
+        Authentication{auth.user, auth.pass},
+        header,
+        body,
+        on_response = response_handler);
+    };
+
+    response_handler = [&](auto&& resp) {
+      if ( resp.error && (retries_count > 0) ) {
+        --retries_count;
+        do_request();
+      } else if ( (!resp.error) && (resp.status_code == 200) ) {        
+        result_handler(pre::json::from_json<releases::asset_t>(resp.text));
+      } else {
+        throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
+            + std::to_string(resp.status_code) + " accessing : "s + url );
+      }
+    };
+
+    do_request();      
+  }  
+
+  /**
+   * @brief Delete a github release asset
+   * 
+   * @param owner repo owner
+   * @param repository 
+   * @param release_id
+   * @param release 
+   * @param result_handler taking a gh::repos::repository_t
+   * @param auth credentials
+   */
+  inline void delete_release_asset(const std::string owner, const std::string repository, 
+    const size_t asset_id, 
+    const auth auth, 
+    const std::string& api_endpoint = "https://api.github.com"s
+  ) {
+    using namespace xxhr;
+
+    auto url = api_endpoint + "/repos/"s + owner + "/" + repository + "/releases/assets/" + std::to_string(asset_id);
+    auto retries_count = 5;
+    std::function<void(xxhr::Response&&)> response_handler;
+
+    auto do_request = [&]() { 
   
+      DELETE_(url,
+        Authentication{auth.user, auth.pass},
+        on_response = response_handler);
+
+    };
+
+    response_handler = [&](auto&& resp) {
+      if ( resp.error && (retries_count > 0) ) {
+        --retries_count;
+        do_request();
+      } else if ( (!resp.error) && (resp.status_code == 204) ) {        
+        // success
+      } else {
+        throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
+            + std::to_string(resp.status_code) + " accessing : "s + url );
+      }
+    };
+
+    do_request();      
+  }  
+
+
+
+  /**
+   * @brief Upload an asset to a release
+   * 
+   * @param owner 
+   * @param repository 
+   * @param asset_name File name of the asset
+   * @param asset_label Additional info / label
+   * @param raw_content 
+   * @param content_type @see https://www.iana.org/assignments/media-types/media-types.xhtml
+   * @param auth 
+   * @param api_endpoint 
+   */
+  inline void create_release_asset(const std::string owner, const std::string repository, const size_t release_id,
+    const std::string asset_name, const std::string asset_label, const std::string raw_content, const std::string content_type, 
+    std::function<void(releases::asset_t&&)>&& result_handler, 
+    const auth auth, const std::string& uploads_api_endpoint = "https://uploads.github.com"s
+  ) {
+    using namespace xxhr;
+
+    auto url = uploads_api_endpoint + "/repos/"s + owner + "/" + repository + "/releases/" + std::to_string(release_id) + "/assets";
+    auto retries_count = 5;
+    std::function<void(xxhr::Response&&)> response_handler;
+
+    auto do_request = [&]() { 
+  
+      POST(url,
+        Authentication{auth.user, auth.pass},
+        Header({
+          { "Accept", "application/vnd.github+json" },
+          { "Content-Type", content_type }
+        }),
+        Parameters( { 
+          { "name", asset_name }, 
+          { "label", asset_label }
+        }),
+        Body(raw_content),
+        on_response = response_handler);
+
+    };
+
+    response_handler = [&](auto&& resp) {
+      if ( resp.error && (retries_count > 0) ) {
+        --retries_count;
+        do_request();
+      } else if ( (!resp.error) && (resp.status_code == 201) ) {        
+        result_handler(pre::json::from_json<releases::asset_t>(resp.text));
+      } else {
+        throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
+            + std::to_string(resp.status_code) + " accessing : "s + url );
+      }
+    };
+
+    do_request();      
+  }  
+
+
+
 
 }

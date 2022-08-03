@@ -78,7 +78,6 @@ int main(int argc, char** argv) {
 
     gh::releases::create_release_t release_data{
       .tag_name = release_tag, 
-      .target_commitish = "main",
       .name = "A test release",
       .body = "This is a test release!",
       .draft = true,
@@ -93,8 +92,7 @@ int main(int argc, char** argv) {
         assertm(r.draft == release_data.draft, "Release draft status shall be the as set");
         
         gh::releases::update_release_t release_update_data{
-          .tag_name = release_tag, 
-          .target_commitish = "main",
+          .tag_name = release_tag,
           .name = "A test release - updated",
           .body = "This is a test release!",
           .draft = false,

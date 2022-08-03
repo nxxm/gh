@@ -13,8 +13,15 @@
 
 int main(int argc, char** argv) {
  
-  gh::list_releases("tipi-build","cli", [](std::vector<gh::releases::release_t>&& r) {
+  gh::list_releases("tipi-build", "cli", [](std::vector<gh::releases::release_t>&& r) {
     assertm(r.size() > 10, "tipi-build/cli has more than 10 releases");
+
+    // now get the first release by id...
+    size_t id_to_fetch = r[0].id;
+    gh::get_release_by_id("tipi-build", "cli", id_to_fetch, [&id_to_fetch](gh::releases::release_t&& r_by_id) {
+      assertm(r_by_id.id == id_to_fetch, "Testing gh::get_release_by_id(): IDs did not match unexpectedly");
+    });
+
   });
 
   gh::get_latest_release("daminetreg", "trommeli", [](gh::releases::release_t&& r) {

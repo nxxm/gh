@@ -86,8 +86,8 @@ int main(int argc, char** argv) {
       .generate_release_notes = false
     };
 
-    gh::create_release("nxxm", "test-gh-client-release", release_data, 
-      [&release_data, &release_tag, &auth](gh::releases::release_t&& r) {
+    gh::create_release(repo_owner, repo_name, release_data, 
+      [&](gh::releases::release_t&& r) {
         assertm(r.tag_name == release_data.tag_name, "Release tag-name shall be the as set");
         assertm(r.name == release_data.name, "Release name shall be the as set");
         assertm(r.draft == release_data.draft, "Release draft status shall be the as set");
@@ -101,8 +101,8 @@ int main(int argc, char** argv) {
           .prerelease = true
         };
 
-        gh::update_release("nxxm", "test-gh-client-release", r.id, release_update_data, 
-          [&release_update_data, &auth](gh::releases::release_t&& r) {
+        gh::update_release(repo_owner, repo_name, r.id, release_update_data, 
+          [&](gh::releases::release_t&& r) {
             assertm(r.name == release_update_data.name, "Release name shall be the as set");
             assertm(r.prerelease == release_update_data.prerelease, "Release prerelease status shall be the as set");
             
@@ -111,9 +111,9 @@ int main(int argc, char** argv) {
             const std::string asset_name = "hello-world.zip";
             const size_t release_id = r.id;
 
-            gh::create_release_asset("nxxm", "test-gh-client-release", r.id, 
+            gh::create_release_asset(repo_owner, repo_name, r.id, 
               asset_name, "Hello world in a zip", zip_content, gh::releases::CONTENT_TYPE_ZIP, 
-              [&asset_name, &zip_content, &release_id, &auth](gh::releases::asset_t new_asset) {
+              [&](gh::releases::asset_t new_asset) {
                 assertm(asset_name == new_asset.name, "Test create_release_asset() : Asset names missmatch");
                 assertm(zip_content.length() == new_asset.size, "Test create_release_asset() : Asset size/length missmatch");
 
@@ -124,22 +124,22 @@ int main(int argc, char** argv) {
                   .label = updated_label
                 };
 
-                gh::update_release_asset("nxxm", "test-gh-client-release", new_asset.id, asset_update, 
-                  [&asset_name, &zip_content, &updated_label, &release_id, &auth](gh::releases::asset_t updated_asset) {
+                gh::update_release_asset(repo_owner, repo_name, new_asset.id, asset_update, 
+                  [&](gh::releases::asset_t updated_asset) {
                     assertm(asset_name == updated_asset.name, "Test update_release_asset() : Asset names missmatch");
                     assertm(updated_label == updated_asset.label, "Test update_release_asset() : Asset label missmatch");
 
                     // test downloading
-                    gh::download_release_asset("nxxm", "test-gh-client-release", updated_asset.id, 
+                    gh::download_release_asset(repo_owner, repo_name, updated_asset.id, 
                       [&zip_content](std::string &&result) {
                         assertm(result == zip_content, "Test download_release_asset() : contents not equal");
                       }, 
                       auth);
 
                     // deleting stuff
-                    gh::delete_release_asset("nxxm", "test-gh-client-release", updated_asset.id, auth);
+                    gh::delete_release_asset(repo_owner, repo_name, updated_asset.id, auth);
 
-                    gh::delete_release("nxxm", "test-gh-client-release", release_id, auth);
+                    gh::delete_release(repo_owner, repo_name, release_id, auth);
                   },
                   auth);
               },

@@ -25,11 +25,14 @@ int main(int argc, char** argv) {
   }, auth);
 
   // a repo with branch protections
-  gh::list_branches("nxxm", "test-gh-client-release", [](gh::repos::branches&& branches) {
+  std::string repo_owner = std::getenv("GH_RELEASE_TEST_REPO_OWNER");
+  std::string repo_name = std::getenv("GH_RELEASE_TEST_REPO_NAME");
+
+  gh::list_branches(repo_owner, repo_name, [&](gh::repos::branches&& branches) {
     
     auto findit = std::find_if(branches.begin(), branches.end(), [](gh::repos::branch_t& b) { return b.is_protected; });
     
-    assertm(findit != branches.end(), "No protected branch found in repo nxxm/test-gh-client-release / was expected");
+    assertm(findit != branches.end(), "No protected branch found in repo / was expected");
   }, auth);
 
   return 0;

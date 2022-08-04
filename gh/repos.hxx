@@ -454,7 +454,6 @@ namespace gh {
         --retries_count;
         do_request();
       } else if ( (!resp.error) && (resp.status_code == 200 || resp.status_code == 201) ) {
-        std::cout << "Raw body:" << resp.text << std::endl;
         result_handler(pre::json::from_json<repos::repository_t>(resp.text, detail::json_remap_private_to_is_private));
       } else {
         throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 

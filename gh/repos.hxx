@@ -164,6 +164,8 @@ namespace gh::repos {
 
     std::optional<organization_t> organization;
 
+    std::optional<std::string> visibility;
+
   };
 
   struct repository_t : public basic_repository_t {
@@ -199,7 +201,7 @@ BOOST_FUSION_ADAPT_STRUCT(gh::repos::basic_repository_t,
 
   (auto, permissions) (auto, allow_rebase_merge) (auto, allow_squash_merge)
   (auto, allow_merge_commit) (auto, subscribers_count) (auto, network_count)
-  (auto, license) (auto, organization)
+  (auto, license) (auto, organization) (auto, visibility)
 );
 
 
@@ -230,7 +232,7 @@ BOOST_FUSION_ADAPT_STRUCT(gh::repos::repository_t,
 
   (auto, permissions) (auto, allow_rebase_merge) (auto, allow_squash_merge)
   (auto, allow_merge_commit) (auto, subscribers_count) (auto, network_count)
-  (auto, license) (auto, organization)
+  (auto, license) (auto, organization) (auto, visibility)
     
   (auto, parent) (auto, source));
 
@@ -251,6 +253,15 @@ namespace gh::repos {
     //! Whether the repository is private. (Default: false)
     std::optional<bool> is_private; // needs to be mapped
 
+    /**
+     * @brief  Only in context of organization repositories
+     * Can be public or private. If your organization is associated with an 
+     * enterprise account usin visibility can also be internal. 
+     * 
+     * Can be one of: public, private, internal 
+     */
+    std::optional<std::string> visibility;
+
     //! Whether issues are enabled. (Default: true)
     std::optional<bool> has_issues;
 
@@ -259,6 +270,9 @@ namespace gh::repos {
 
     //! Whether the wiki is enabled. (Default: true)
     std::optional<bool> has_wiki;
+
+    //! Whether downloads are enabled. (Default: true)
+    std::optional<bool> has_downloads;
 
     //! The id of the team that will be granted access to this repository. This is only valid when creating a repository in an organization.
     std::optional<size_t> team_id;
@@ -287,13 +301,24 @@ namespace gh::repos {
     //! Whether to delete head branches when pull requests are merged (Default: false)
     std::optional<bool> delete_branch_on_merge;
 
-    //! Whether downloads are enabled. (Default: true)
-    std::optional<bool> has_downloads;
-
     //! Whether this repository acts as a template that can be used to generate new repositories. (Default: false)
     std::optional<bool> is_template;
   };
 }
+
+BOOST_FUSION_ADAPT_STRUCT(gh::repos::create_repository_t, 
+  (auto, name) (auto, description)
+  (auto, is_private) (auto, visibility) 
+  (auto, has_issues) (auto, has_projects) (auto, has_wiki) (auto, has_downloads) 
+  (auto, team_id) (auto, auto_init) 
+  (auto, gitignore_template) 
+  (auto, license_template) 
+  (auto, allow_squash_merge) 
+  (auto, allow_merge_commit) 
+  (auto, allow_rebase_merge) 
+  (auto, allow_auto_merge) 
+  (auto, delete_branch_on_merge) 
+  (auto, is_template))
 
 namespace gh {
 
@@ -335,6 +360,142 @@ namespace gh {
         on_response = response_handler);
     }
   }
+
+  namespace detail {
+    inline void json_remap_private_to_is_private(nlohmann::json& jdoc) {
+      pre::json::remap_property(jdoc, "private", "is_private");
+    }
+
+    inline void json_remap_is_private_to_private(nlohmann::json& jdoc) {
+      pre::json::remap_property(jdoc, "is_private", "private");
+    }
+  }
+
+  /**
+   * @brief Create a repo under the specified organization
+   * 
+   * @param organization org the authenticated user has to be a member of
+   * @param new_repo repo creation info
+   * @param result_handler 
+   * @param auth 
+   * @param api_endpoint 
+   */
+  inline void create_repo(const std::string organization, const gh::repos::create_repository_t new_repo,
+    std::function<void(repos::repository_t&&)>&& result_handler,
+    const auth& auth,
+    const std::string& api_endpoint = "https://api.github.com"s
+  ) {
+
+    using namespace xxhr;
+    auto url = api_endpoint + "/orgs/"s + organization + "/repos";
+    auto retries_count = 5;
+    std::function<void(xxhr::Response&&)> response_handler;
+
+    auto do_request = [&]() { 
+  
+      POST(url,
+        Authentication{auth.user, auth.pass},
+        Header({
+          { "Accept", "application/vnd.github+json" },
+        }),
+        Body(pre::json::to_json(new_repo, detail::json_remap_is_private_to_private).dump()),
+        on_response = response_handler);
+
+    };
+
+    response_handler = [&](auto&& resp) {
+      if ( resp.error && (retries_count > 0) ) {
+        --retries_count;
+        do_request();
+      } else if ( (!resp.error) && (resp.status_code == 200 || resp.status_code == 201) ) {   
+        result_handler(pre::json::from_json<repos::repository_t>(resp.text, detail::json_remap_private_to_is_private));
+      } else {
+        throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
+            + std::to_string(resp.status_code) + " accessing : "s + url );
+      }
+    };
+
+    do_request();     
+  }
+
+  /**
+   * @brief Create a repo under the provided user
+   * 
+   * @param new_repo repo creation info
+   * @param result_handler 
+   * @param auth 
+   * @param api_endpoint 
+   */
+  inline void create_repo(const gh::repos::create_repository_t new_repo,
+    std::function<void(repos::repository_t&&)>&& result_handler,
+    const auth& auth,
+    const std::string& api_endpoint = "https://api.github.com"s
+  ) {
+
+    using namespace xxhr;
+    auto url = api_endpoint + "/user/repos";
+    auto retries_count = 5;
+    std::function<void(xxhr::Response&&)> response_handler;
+
+    auto do_request = [&]() { 
+  
+      POST(url,
+        Authentication{auth.user, auth.pass},
+        Header({
+          { "Accept", "application/vnd.github+json" },
+        }),
+        Body(pre::json::to_json(new_repo, detail::json_remap_is_private_to_private).dump()),
+        on_response = response_handler);
+
+    };
+
+    response_handler = [&](auto&& resp) {
+      if ( resp.error && (retries_count > 0) ) {
+        --retries_count;
+        do_request();
+      } else if ( (!resp.error) && (resp.status_code == 200 || resp.status_code == 201) ) {
+        std::cout << "Raw body:" << resp.text << std::endl;
+        result_handler(pre::json::from_json<repos::repository_t>(resp.text, detail::json_remap_private_to_is_private));
+      } else {
+        throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
+            + std::to_string(resp.status_code) + " accessing : "s + url );
+      }
+    };
+
+    do_request();     
+  }
+
+  inline void delete_repo(const std::string owner, const std::string repository, const auth auth, 
+    const std::string& api_endpoint = "https://api.github.com"s
+  ) {
+    using namespace xxhr;
+
+    auto url = api_endpoint + "/repos/"s + owner + "/" + repository;
+    auto retries_count = 5;
+    std::function<void(xxhr::Response&&)> response_handler;
+
+    auto do_request = [&]() { 
+  
+      DELETE_(url,
+        Authentication{auth.user, auth.pass},
+        on_response = response_handler);
+
+    };
+
+    response_handler = [&](auto&& resp) {
+      if ( resp.error && (retries_count > 0) ) {
+        --retries_count;
+        do_request();
+      } else if ( (!resp.error) && (resp.status_code == 204) ) {        
+        // success
+      } else {
+        throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
+            + std::to_string(resp.status_code) + " accessing : "s + url );
+      }
+    };
+
+    do_request();      
+  }  
 
 
 }

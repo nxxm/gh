@@ -3,6 +3,9 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <ctime>
+#include <iostream>
+#include <string>
 #include <pre/json/to_json.hpp>
 #include "utils.hpp"
 
@@ -29,6 +32,44 @@ int main(int argc, char** argv) {
   gh::repos_get("nxxm", "test-gh-client-release", [](gh::repos::repository_t&& r) {
     assertm(r.is_private == true, "Repo is expected to be private");
   }, auth);
+
+  {
+    std::stringstream repo_name_ss; 
+    repo_name_ss << "gh-api-test-" << std::time(0);
+    std::string repo_name = repo_name_ss.str();
+
+    gh::repos::create_repository_t repo_data{
+      .name = repo_name, 
+      .is_private = true
+    };
+
+    
+    gh::create_repo(repo_data, 
+      [&auth](gh::repos::repository_t&& r) {
+        assertm(r.is_private == true, "Repo is expected to be private");
+        std::cout << pre::json::to_json(r).dump(2) << std::endl;
+
+        gh::delete_repo(r.owner.login, r.name, auth);
+      },
+      auth);
+
+    // NOTE:
+    // we could do this if we put some work into the authentication in the CI
+    // tested manually by Y.S.
+    /*
+    gh::create_repo("an-organization", repo_data, 
+      [&auth](gh::repos::repository_t&& r) {
+        assertm(r.is_private == true, "Repo is expected to be private");
+        std::cout << pre::json::to_json(r).dump(2) << std::endl;
+
+        gh::delete_repo(r.owner.login, r.name, auth);
+      },
+      auth);
+    */
+
+  }
+
+
 
 
   return 0;

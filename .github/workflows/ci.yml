@@ -7,8 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     container: tipibuild/tipi-ubuntu
     env:
-      GH_USER: ${{ github.actor }}
-      GH_PASS: ${{ secrets.GITHUB_TOKEN }}
+      GH_USER: nxxmgh
+      GH_PASS: ${{ secrets.USER_PAT_NXXMGH_TOKEN_FOR_GH }}
       GH_RELEASE_TEST_REPO_OWNER: nxxm
       GH_RELEASE_TEST_REPO_NAME: gh
     steps:

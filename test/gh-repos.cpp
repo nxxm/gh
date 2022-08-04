@@ -53,11 +53,7 @@ int main(int argc, char** argv) {
       },
       auth);
 
-    // NOTE:
-    // we could do this if we put some work into the authentication in the CI
-    // tested manually by Y.S.
-    /*
-    gh::create_repo("an-organization", repo_data, 
+    gh::create_repo("tipibuild", repo_data, 
       [&auth](gh::repos::repository_t&& r) {
         assertm(r.is_private == true, "Repo is expected to be private");
         std::cout << pre::json::to_json(r).dump(2) << std::endl;
@@ -65,7 +61,6 @@ int main(int argc, char** argv) {
         gh::delete_repo(r.owner.login, r.name, auth);
       },
       auth);
-    */
 
   }
 

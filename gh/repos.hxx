@@ -249,7 +249,7 @@ namespace gh::repos {
     std::optional<std::string> description;
 
     //! Whether the repository is private. (Default: false)
-    std::optional<bool> is_private; // <- capital P, hack that works apparently
+    std::optional<bool> is_private; // needs to be mapped
 
     //! Whether issues are enabled. (Default: true)
     std::optional<bool> has_issues;
@@ -326,7 +326,6 @@ namespace gh {
       }
     };
 
-
     if (auth) {
       GET(url,
         Authentication{auth->user, auth->pass},
@@ -336,5 +335,6 @@ namespace gh {
         on_response = response_handler);
     }
   }
+
 
 }

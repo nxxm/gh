@@ -6,6 +6,8 @@
 
 #include <nlohmann/json.hpp>
 #include <pre/json/from_json.hpp>
+#include <pre/json/to_json.hpp>
+#include <pre/json/mapping.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
 
 #include <xxhr/xxhr.hpp>
@@ -85,6 +87,9 @@ namespace gh::repos {
     //bool private{}; // TODO: support keyword mapping for member names in pre::json because private is a c++ keyword.
     bool fork{};
     owner_t owner;
+
+    //! Whether the repository is private. (Default: false)
+    std::optional<bool> is_private;
 
     std::string archive_url;
     std::string assignees_url;
@@ -169,7 +174,7 @@ namespace gh::repos {
 
 BOOST_FUSION_ADAPT_STRUCT(gh::repos::basic_repository_t,
   (auto, id) (auto, full_name) (auto, name)
-  /*(auto, private_)*/ (auto, fork) (auto, owner) 
+  (auto, is_private) (auto, fork) (auto, owner) 
   (auto, description)
 
   (auto, archive_url) (auto, assignees_url) (auto, blobs_url)
@@ -200,7 +205,7 @@ BOOST_FUSION_ADAPT_STRUCT(gh::repos::basic_repository_t,
 
 BOOST_FUSION_ADAPT_STRUCT(gh::repos::repository_t, 
   (auto, id) (auto, full_name) (auto, name)
-  /*(auto, private_)*/ (auto, fork) (auto, owner) 
+  (auto, is_private) (auto, fork) (auto, owner) 
   (auto, description)
 
   (auto, archive_url) (auto, assignees_url) (auto, blobs_url)
@@ -229,6 +234,67 @@ BOOST_FUSION_ADAPT_STRUCT(gh::repos::repository_t,
     
   (auto, parent) (auto, source));
 
+
+namespace gh::repos {
+
+  /**
+   * \brief repository as found in repos api.
+   */ 
+  struct create_repository_t {
+
+    //! The name of the repository.
+    std::string name;
+
+    //! A short description of the repository.
+    std::optional<std::string> description;
+
+    //! Whether the repository is private. (Default: false)
+    std::optional<bool> is_private; // <- capital P, hack that works apparently
+
+    //! Whether issues are enabled. (Default: true)
+    std::optional<bool> has_issues;
+
+    //! Whether projects are enabled. (Default: true)
+    std::optional<bool> has_projects;
+
+    //! Whether the wiki is enabled. (Default: true)
+    std::optional<bool> has_wiki;
+
+    //! The id of the team that will be granted access to this repository. This is only valid when creating a repository in an organization.
+    std::optional<size_t> team_id;
+
+    //! Whether the repository is initialized with a minimal README. (Default: false)
+    std::optional<bool> auto_init;
+
+    //! The desired language or platform to apply to the .gitignore.
+    std::optional<std::string> gitignore_template;
+
+    //! The license keyword of the open source license for this repository.
+    std::optional<std::string> license_template;
+
+    //! Whether to allow squash merges for pull requests. (Default: true)
+    std::optional<bool> allow_squash_merge;
+
+    //! Whether to allow merge commits for pull requests. (Default: true)
+    std::optional<bool> allow_merge_commit;
+
+    //! Whether to allow rebase merges for pull requests. (Default: true)
+    std::optional<bool> allow_rebase_merge;
+
+    //! Whether to allow Auto-merge to be used on pull requests. (Default: false)
+    std::optional<bool> allow_auto_merge;
+
+    //! Whether to delete head branches when pull requests are merged (Default: false)
+    std::optional<bool> delete_branch_on_merge;
+
+    //! Whether downloads are enabled. (Default: true)
+    std::optional<bool> has_downloads;
+
+    //! Whether this repository acts as a template that can be used to generate new repositories. (Default: false)
+    std::optional<bool> is_template;
+  };
+}
+
 namespace gh {
 
   using namespace std::string_literals;
@@ -251,7 +317,9 @@ namespace gh {
 
     auto response_handler = [&](auto&& resp) {
       if ( (!resp.error) && (resp.status_code == 200) ) {
-        result_handler(pre::json::from_json<repos::repository_t>(resp.text));
+        result_handler(pre::json::from_json<repos::repository_t>(resp.text, [](auto &jdoc) {
+          pre::json::remap_property(jdoc, "private", "is_private");
+        }));
       } else {
         throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
             + std::to_string(resp.status_code) + " accessing : "s + url );

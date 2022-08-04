@@ -1,6 +1,5 @@
 
 #include <gh/releases.hxx>
-#include <cassert>
 #include <ctime>
 #include <cstdlib>
 #include <fstream>
@@ -8,8 +7,7 @@
 #include <string>
 #include <sstream> 
 #include <pre/json/to_json.hpp>
-
-#define assertm(exp, msg) assert(((void)msg, exp))
+#include "utils.hpp"
 
 std::string get_raw_str_dummyzip() {
   // this is an zip with a helloworld.txt

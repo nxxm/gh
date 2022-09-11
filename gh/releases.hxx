@@ -393,7 +393,7 @@ namespace gh {
       if ( resp.error && (retries_count > 0) ) {
         --retries_count;
         do_request();
-      } else if ( (!resp.error) && (resp.status_code == 200) ) {        
+      } else if ( (!resp.error) && (resp.status_code == 201) ) {        
         result_handler(pre::json::from_json<releases::release_t>(resp.text));
       } else {
         throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 

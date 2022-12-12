@@ -20,17 +20,5 @@ int main(int argc, char** argv) {
     );
   }
 
-  {
-    std::cout << "fusion ::: " << std::endl;
-    gh::query_code_search("adapt_struct.hpp path:boost/fusion/include",
-      [](auto&& possibles) {
-        std::cout << pre::json::to_json(possibles).dump(2) << std::endl;
-      },
-      auth 
-    );
-  }
-
-
-
   return 0;
 }

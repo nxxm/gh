@@ -1,0 +1,7 @@
+{
+   "nxxm/xxhr": {},
+   "cpp-pre/json": {
+      "@": "feature/property-name-mapping"
+   },
+   "cpp-pre/type_traits": {}
+}

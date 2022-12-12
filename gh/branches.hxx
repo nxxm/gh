@@ -7,6 +7,7 @@
 #include <functional>
 
 #include <pre/json/from_json.hpp>
+#include <pre/json/mapping.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
 
 #include <xxhr/xxhr.hpp>
@@ -28,8 +29,8 @@ namespace gh::repos {
     //! sha1 of tip branch commit 
     commit_t commit;
 
-    //XXX: cannot is a cpp reserved keyword: bool protected; 
-    //std::string protection_url;
+    bool is_protected; // has to be mapped
+    std::optional<std::string> protection_url;
   };
 
   //! Branches in a repos
@@ -38,7 +39,7 @@ namespace gh::repos {
 }
 
 BOOST_FUSION_ADAPT_STRUCT(gh::repos::branch_t::commit_t, sha, url);
-BOOST_FUSION_ADAPT_STRUCT(gh::repos::branch_t, name, commit);
+BOOST_FUSION_ADAPT_STRUCT(gh::repos::branch_t, name, commit, protection_url, is_protected);
 
 namespace gh {
 
@@ -58,7 +59,20 @@ namespace gh {
     auto url = "https://api.github.com/repos/"s + owner + "/" + repos + "/branches"s;
     auto response_handler = [&](auto&& resp) {
       if ( (!resp.error) && (resp.status_code == 200) ) {
-        result_handler(pre::json::from_json<repos::branches>(resp.text));
+
+        auto mapper = [&](nlohmann::json &jdoc){ 
+          // jdoc should be an array
+          if(!jdoc.is_array()) {
+            throw std::runtime_error("Unexpected format, service answer should have been an array:\n" + resp.text);
+          }
+
+          for (auto &it : jdoc)
+          {
+            pre::json::remap_property(it, "protected", "is_protected");
+          }
+        };
+
+        result_handler(pre::json::from_json<repos::branches>(resp.text, mapper));
       } else {
         throw std::runtime_error(url + " is not responding");
       }

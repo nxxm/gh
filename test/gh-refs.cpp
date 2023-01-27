@@ -34,5 +34,9 @@ int main(int argc, char** argv) {
     std::cout << "Successfully retrieved " << refs.size() << " refs from github.com/grpc/grpc with AUTHENTICATION - which is a PASS" << std::endl;
   }, auth);
 
+  gh::get_tag("nlohmann", "json", "0ca0fe433eb70cea0d5761079c0c5b47b736565b", [](gh::git_data::tag_t&& annotated) {
+    std::cout << "Successfully retrieved 0ca0fe433eb70cea0d5761079c0c5b47b736565b: " << annotated.tag << " pointing to commit " << annotated.object.sha << std::endl;
+  }, auth);
+
   return 0;
 }

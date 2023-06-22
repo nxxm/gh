@@ -1,7 +1,5 @@
 {
-   "nxxm/xxhr": {},
-   "cpp-pre/json": {
-      "@": "feature/property-name-mapping"
-   },
-   "cpp-pre/type_traits": {}
+   "nxxm/xxhr" : { "@" : "feature/move-to-native-tipi-deps" }
+   , "cpp-pre/json" : { "@" : "feature/move-to-native-tipi-deps" }
+   , "cpp-pre/type_traits": {}
 }

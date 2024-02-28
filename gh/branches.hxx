@@ -13,6 +13,7 @@
 #include <xxhr/xxhr.hpp>
 
 #include <gh/auth.hxx>
+#include <gh/pagination.hxx>
 
 namespace gh::repos {
 
@@ -56,8 +57,21 @@ namespace gh {
     std::optional<auth> auth = std::nullopt) {
 
     using namespace xxhr;
-    auto url = "https://api.github.com/repos/"s + owner + "/" + repos + "/branches"s;
-    auto response_handler = [&](auto&& resp) {
+    std::function<void(xxhr::Response&&)> response_handler;
+    repos::branches all_branches;
+    
+    auto do_request = [&](std::string url) {
+      if (auth) {
+        GET(url, 
+          Authentication{auth->user, auth->pass},
+          on_response = response_handler
+        );
+      } else {
+        GET(url, on_response = response_handler);
+      }
+    };
+    
+    response_handler = [&](auto&& resp) {
       if ( (!resp.error) && (resp.status_code == 200) ) {
 
         auto mapper = [&](nlohmann::json &jdoc){ 
@@ -72,17 +86,23 @@ namespace gh {
           }
         };
 
-        result_handler(pre::json::from_json<repos::branches>(resp.text, mapper));
+        auto page = pre::json::from_json<repos::branches>(resp.text, mapper);
+        all_branches.insert(all_branches.end(), page.begin(), page.end());
+
+        auto next_page = gh::detail::pagination::get_next_page_url(resp);
+        if(next_page) {
+          do_request(next_page.value());
+        }
+        else {
+          result_handler({all_branches.begin(), all_branches.end()});
+        }
       } else {
-        throw std::runtime_error(url + " is not responding");
+        std::string err_msg = resp.error;
+        throw std::runtime_error(resp.url + " failed with error: " + err_msg);
       }
     };
 
-    if (auth) {
-      GET(url, Authentication{auth->user, auth->pass},
-        on_response = response_handler);
-    } else {
-      GET(url, on_response = response_handler);
-    }
+    auto url = "https://api.github.com/repos/"s + owner + "/" + repos + "/branches?" + gh::detail::pagination::get_per_page_query_string();
+    do_request(url);
   }
 }

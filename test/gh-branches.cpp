@@ -10,18 +10,14 @@ int main(int argc, char** argv) {
     std::cout << pre::json::to_json(branches).dump(2) << std::endl;
   });
 
-
-  gh::auth auth{ 
-    std::getenv("GH_USER"),
-    std::getenv("GH_PASS")
-  };
+  auto auth = test_utils::get_auth();
 
   gh::list_branches("daminetreg", "xxhr", [](gh::repos::branches&& branches) {
     std::cout << pre::json::to_json(branches).dump(2) << std::endl;
   }, auth);
 
-  gh::list_branches("boostorg", "fusion", [](gh::repos::branches&& branches) {
-    std::cout << pre::json::to_json(branches).dump(2) << std::endl;
+  gh::list_branches("llvm", "llvm-project", [](gh::repos::branches&& branches) {
+    assertm(branches.size() > 100, "We expect this to query multiple pages");
   }, auth);
 
   // a repo with branch protections

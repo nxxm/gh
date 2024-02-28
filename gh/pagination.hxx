@@ -8,6 +8,7 @@
 #include <boost/algorithm/string/split.hpp>
 
 namespace gh::detail::pagination {
+    using namespace std::string_literals;
 
     const size_t MAX_PAGE_SIZE = 100;
     const size_t MIN_PAGE_SIZE = 5;
@@ -26,9 +27,7 @@ namespace gh::detail::pagination {
     
     inline std::map<std::string, std::string> parse_gh_pagination_header(std::string header_value) {
         // as per doc https://docs.github.com/en/rest/using-the-rest-api/using-pagination-in-the-rest-api?apiVersion=2022-11-28, the header comes as:
-        // link: <https://api.github.com/repositories/1300192/issues?page=2>; rel="prev", <https://api.github.com/repositories/1300192/issues?page=4>; rel="next", <https://api.github.com/repositories/1300192/issues?page=515>; rel="last", <https://api.github.com/repositories/1300192/issues?page=1>; rel="first"
-        using namespace std::string_literals;
-    
+        // link: <https://api.github.com/repositories/1300192/issues?page=2>; rel="prev", <https://api.github.com/repositories/1300192/issues?page=4>; rel="next", <https://api.github.com/repositories/1300192/issues?page=515>; rel="last", <https://api.github.com/repositories/1300192/issues?page=1>; rel="first"    
         std::map<std::string, std::string> result;
 
         std::vector<std::string> link_parts;
@@ -60,7 +59,7 @@ namespace gh::detail::pagination {
         return result;
     }
 
-
+    //! \brief returns the next page URL or nullopt given a xxhr Response
     inline std::optional<std::string> get_next_page_url(const xxhr::Response &resp) {
 
         if(has_gh_pagination_links(resp)) {
@@ -72,6 +71,11 @@ namespace gh::detail::pagination {
         }
 
         return std::nullopt;
+    }
+
+    //! \brief get the query string fragment for paginated urls
+    inline std::string get_per_page_query_string(size_t per_page = MAX_PAGE_SIZE) {
+        return "per_page="s + std::to_string(per_page);
     }
   
 }

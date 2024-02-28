@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <pre/json/to_json.hpp>
+#include "utils.hpp"
 
 int main(int argc, char** argv) {
 
@@ -17,10 +18,7 @@ int main(int argc, char** argv) {
     std::cout << "Successfully retrieved " << refs.size() << " refs from github.com/grpc/grpc - which is a PASS" << std::endl;
   });
 
-  gh::auth auth{ 
-    std::getenv("GH_USER"),
-    std::getenv("GH_PASS")
-  };
+  auto auth = test_utils::get_auth();
 
   gh::get_refs("boostorg", "fusion", gh::filter_refs::TAGS, [](gh::git_data::refs&& tags) {
     std::cout << pre::json::to_json(tags).dump(2) << std::endl;

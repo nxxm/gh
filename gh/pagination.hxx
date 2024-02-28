@@ -73,9 +73,11 @@ namespace gh::detail::pagination {
         return std::nullopt;
     }
 
+    const std::string QUERY_STRING_PER_PAGE_KEY = "per_page";
+
     //! \brief get the query string fragment for paginated urls
     inline std::string get_per_page_query_string(size_t per_page = MAX_PAGE_SIZE) {
-        return "per_page="s + std::to_string(per_page);
+        return QUERY_STRING_PER_PAGE_KEY + "="s + std::to_string(per_page);
     }
   
 }

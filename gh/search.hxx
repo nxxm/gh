@@ -11,6 +11,7 @@
 
 #include <gh/auth.hxx>
 #include <gh/owner.hxx>
+#include <gh/pagination.hxx>
 
 namespace gh::code_search {
   /**
@@ -117,23 +118,43 @@ namespace gh {
       auth auth) {
   
     using namespace xxhr;
-    auto url = "https://api.github.com/search/code"s;
 
-    auto response_handler = [&](auto&& resp) {
+    std::function<void(xxhr::Response&&)> response_handler;
+    code_search::results all_results;
+    
+    auto do_request = [&](std::string url, xxhr::Parameters query_params) {
+      GET(url, 
+        Authentication{auth.user, auth.pass},
+        on_response = response_handler,
+        query_params
+      );
+    };
+    
+    response_handler = [&](auto&& resp) {
       if ( (!resp.error) && (resp.status_code == 200) ) {
-        auto found_json = nlohmann::json::parse(resp.text)["items"];
-        result_handler(pre::json::from_json<code_search::results>(found_json));
+
+        auto found_items_json = nlohmann::json::parse(resp.text)["items"];       
+        auto page = pre::json::from_json<code_search::results>(found_items_json);
+        all_results.insert(all_results.end(), page.begin(), page.end());
+
+        auto next_page = gh::detail::pagination::get_next_page_url(resp);
+        if(next_page) {
+          do_request(next_page.value(), xxhr::Parameters{});
+        }
+        else {
+          result_handler({all_results.begin(), all_results.end()});
+        }
       } else {
-        throw std::runtime_error( std::string(resp.error) 
-            + ", status : " + std::to_string(resp.status_code) 
-            + ". accessing : "s + url + ":\n"
-            + resp.text );
+        throw std::runtime_error(resp.url + " failed with error: " + std::string(resp.error));
       }
     };
 
-    GET(url,
-      xxhr::Parameters{{"q", criteria}},
-      Authentication{auth.user, auth.pass},
-      on_response = response_handler);
-   }
+    xxhr::Parameters start_query{
+      { gh::detail::pagination::QUERY_STRING_PER_PAGE_KEY, std::to_string(gh::detail::pagination::MAX_PAGE_SIZE) },
+      { "q", criteria }
+    };
+
+    do_request("https://api.github.com/search/code", start_query);
+  }
+
 }

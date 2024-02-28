@@ -97,8 +97,7 @@ namespace gh {
           result_handler({all_branches.begin(), all_branches.end()});
         }
       } else {
-        std::string err_msg = resp.error;
-        throw std::runtime_error(resp.url + " failed with error: " + err_msg);
+        throw std::runtime_error(resp.url + " failed with error: " + std::string(resp.error));
       }
     };
 

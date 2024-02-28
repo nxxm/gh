@@ -1,5 +1,132 @@
 {
-   "nxxm/xxhr" : { "@" : "feature/move-to-native-tipi-deps" }
-   , "cpp-pre/json" : { "@" : "feature/move-to-native-tipi-deps" }
-   , "cpp-pre/type_traits": {}
+   "cpp-pre/json": {
+      "@": "feature/move-to-native-tipi-deps",
+      "requires": {
+         "boostorg/boost": {
+            "@": "boost-1.80.0",
+            "opts": "set(BOOST_INCLUDE_LIBRARIES system filesystem uuid)",
+            "packages": [
+               "boost_system",
+               "boost_filesystem",
+               "boost_uuid"
+            ],
+            "targets": [
+               "Boost::system",
+               "Boost::filesystem",
+               "Boost::uuid"
+            ],
+            "u": true
+         },
+         "nlohmann/json": {
+            "@": "v3.11.2",
+            "u": false,
+            "x": [
+               "benchmarks",
+               "/tests",
+               "/docs",
+               "/tools"
+            ]
+         }
+      },
+      "u": false
+   },
+   "cpp-pre/type_traits": {
+      "@": "v2.0.0",
+      "u": false,
+      "x": [
+         "/test"
+      ]
+   },
+   "nxxm/xxhr": {
+      "@": ":faa17ac3547ad194d916ea69ac3fd479202629da",
+      "requires": {
+         "aantron/better-enums": {
+            "@": "0.11.1",
+            "u": false,
+            "x": [
+               "/example",
+               "/script",
+               "/doc",
+               "/test"
+            ]
+         },
+         "boostorg/boost": {
+            "@": "boost-1.80.0",
+            "opts": "set(BOOST_INCLUDE_LIBRARIES system filesystem uuid)",
+            "packages": [
+               "boost_system",
+               "boost_filesystem",
+               "boost_uuid"
+            ],
+            "targets": [
+               "Boost::system",
+               "Boost::filesystem",
+               "Boost::uuid"
+            ],
+            "u": true
+         },
+         "nxxm/curl": {
+            "@": ":eee4ae62ee24aec9c7f8948fd8670a5e80c2cf83",
+            "opts": "set(BUILD_CURL_TESTS OFF) \nset(BUILD_CURL_EXE ON) \nset(CMAKE_USE_OPENSSL ON) \nset(CMAKE_USE_LIBSSH2 OFF) \nset(BUILD_TESTING OFF)",
+            "packages": [
+               "CURL"
+            ],
+            "requires": {
+               "hunter-packages/c-ares": {
+                  "@": "v1.14.0-p0",
+                  "packages": [
+                     "c-ares"
+                  ],
+                  "targets": [
+                     "c-ares::cares"
+                  ],
+                  "u": true
+               },
+               "hunter-packages/zlib": {
+                  "@": "v1.2.11-p1",
+                  "packages": [
+                     "ZLIB"
+                  ],
+                  "targets": [
+                     "ZLIB::zlib"
+                  ],
+                  "u": true
+               },
+               "nxxm/boringssl": {
+                  "@": ":358175c062c3a3964d4734df4b122e6af851def0",
+                  "u": true,
+                  "packages": [
+                     "OpenSSL",
+                     "BoringSSL"
+                  ],
+                  "targets": [
+                     "OpenSSL::SSL",
+                     "OpenSSL::Crypto",
+                     "BoringSSL::decrepit"
+                  ],
+                  "find_mode": " "
+               }
+            },
+            "targets": [
+               "CURL::libcurl"
+            ],
+            "u": true
+         }
+      }
+   },
+   "boostorg/boost": {
+      "@": "boost-1.80.0",
+      "opts": "set(BOOST_INCLUDE_LIBRARIES system filesystem uuid)",
+      "packages": [
+         "boost_system",
+         "boost_filesystem",
+         "boost_uuid"
+      ],
+      "targets": [
+         "Boost::system",
+         "Boost::filesystem",
+         "Boost::uuid"
+      ],
+      "u": true
+   }
 }

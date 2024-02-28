@@ -13,6 +13,7 @@
 
 #include <gh/owner.hxx>
 #include <gh/auth.hxx>
+#include <gh/pagination.hxx>
 
 namespace gh::releases {
 
@@ -207,7 +208,6 @@ namespace gh {
       }
     };
 
-
     if (auth) {
       GET(url,
         Authentication{auth->user, auth->pass},
@@ -263,7 +263,109 @@ namespace gh {
     do_request();
   }
 
+
+  namespace detail {
+
+
     /**
+     * \brief Get all the (paginated) assets from a release
+     * \param auth credentials
+     * \param release_url
+     * \param result_handler
+     * \param page_size
+     */
+    inline void get_release_assets_by_url(std::string assets_url,
+      std::function<void(gh::releases::assets_t&&, size_t /* num_pages for testing basically...*/)>& result_handler,
+      std::optional<auth> auth = std::nullopt
+    ) {
+      using namespace xxhr;
+      auto retries_count = 5;
+      gh::releases::assets_t all_assets; // store for paginated retrieve
+      std::set<std::string> pages_queried;
+
+      std::function<void(xxhr::Response&&)> response_handler;
+
+      auto do_request = [&](const std::string& url) { 
+        pages_queried.insert(url);
+        if (auth) {
+          GET(url,
+            Authentication{auth->user, auth->pass},
+            on_response = response_handler);
+        } else {
+          GET(url,
+            on_response = response_handler);
+        }
+      };
+
+      response_handler = [&](auto&& resp) {
+        if ( resp.error && (retries_count > 0) ) {
+          --retries_count;
+          do_request(resp.url);
+        } else if ( (!resp.error) && (resp.status_code == 200) ) {
+
+          auto page = pre::json::from_json<gh::releases::assets_t>(resp.text);
+          all_assets.insert(all_assets.end(), page.begin(), page.end());
+
+          auto next_page_url = gh::detail::pagination::get_next_page_url(resp);
+          if(next_page_url) {
+            do_request(next_page_url.value());
+          }
+          else {
+            result_handler({all_assets.begin(), all_assets.end()}, pages_queried.size());
+          }
+        } else {
+          throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
+              + std::to_string(resp.status_code) + " accessing : "s + assets_url + " or linked pages");
+        }
+      };
+
+      do_request(assets_url);
+    }
+
+  }
+
+  /**
+   * \brief Get all the (paginated) assets for a given release
+   * \param auth credentials
+   * \param release
+   * \param force_get Get the releases even if the default pagination limit is undercut
+   * \param api_endpoint
+  */
+  inline void get_release_assets(const gh::releases::release_t& release,
+    std::function<void(gh::releases::assets_t&&, size_t /* num_pages for testing basically...*/)>&& result_handler,
+    bool force_get,
+    std::optional<auth> auth = std::nullopt
+  ) {
+
+    if(release.assets.size() >= gh::detail::pagination::DEFAULT_PAGE_SIZE || force_get) {
+      auto assets_url = release.url + "/assets?per_page=" + std::to_string(gh::detail::pagination::MAX_PAGE_SIZE);
+      detail::get_release_assets_by_url(assets_url, result_handler, auth);
+    }
+    else {
+      result_handler({release.assets.begin(), release.assets.end()}, 0);
+    }    
+  }
+
+
+  /**
+   * \brief Get all the (paginated) assets for a release given its owner, repository and ID
+   * \param auth credentials
+   * \param owner
+   * \param repository
+   * \param id
+   * \param page_size
+   * \param api_endpoint
+  */
+  inline void get_release_assets_by_release_id(std::string owner, std::string repository, size_t id,
+    std::function<void(gh::releases::assets_t&&, size_t /* num_pages for testing basically...*/)>&& result_handler,
+    std::optional<auth> auth = std::nullopt,
+    const std::string& api_endpoint = "https://api.github.com"s
+  ) {
+    auto url = api_endpoint + "/repos/"s + owner + "/" + repository + "/releases/" + std::to_string(id) + "/assets?per_page=" + std::to_string(gh::detail::pagination::MAX_PAGE_SIZE);
+    detail::get_release_assets_by_url(url, result_handler, auth);
+  }
+
+  /**
    * \brief gets the provided repo and pass it to result_handler otherwise throws.
    * \param auth credentials
    * \param owner
@@ -322,12 +424,12 @@ namespace gh {
     const std::string& api_endpoint = "https://api.github.com"s 
   ) {
     using namespace xxhr;
-    auto url = api_endpoint + "/repos/"s + owner + "/" + repository + "/releases";
     auto retries_count = 5;
     std::function<void(xxhr::Response&&)> response_handler;
 
+    std::vector<releases::release_t> all_releases;
 
-    auto do_request = [&]() { 
+    auto do_request = [&](std::string url) { 
       if (auth) {
         GET(url,
           Authentication{auth->user, auth->pass},
@@ -338,19 +440,32 @@ namespace gh {
       }
     };
 
-    response_handler = [&](auto&& resp) {
+    response_handler = [&](xxhr::Response&& resp) {
       if ( resp.error && (retries_count > 0) ) {
         --retries_count;
-        do_request();
+        do_request(resp.url);
       } else if ( (!resp.error) && (resp.status_code == 200) ) {
-        result_handler(pre::json::from_json<std::vector<releases::release_t>>(resp.text));
+
+        auto releases = pre::json::from_json<std::vector<releases::release_t>>(resp.text);
+        all_releases.insert(all_releases.end(), releases.begin(), releases.end());
+
+        auto next_page = gh::detail::pagination::get_next_page_url(resp);
+        if(next_page) {
+          do_request(next_page.value());
+        }
+        else {
+          result_handler({all_releases.begin(), all_releases.end()});
+        }
+
+        
       } else {
         throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
-            + std::to_string(resp.status_code) + " accessing : "s + url );
+            + std::to_string(resp.status_code) + " accessing : "s + resp.url );
       }
     };
 
-    do_request();
+    auto first_request = api_endpoint + "/repos/"s + owner + "/" + repository + "/releases?per_page=" + std::to_string(gh::detail::pagination::MAX_PAGE_SIZE);
+    do_request(first_request);
   }
 
   /**

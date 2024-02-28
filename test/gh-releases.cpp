@@ -1,6 +1,7 @@
 
 #include <gh/releases.hxx>
 #include <ctime>
+#include <algorithm>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -34,17 +35,19 @@ int main(int argc, char** argv) {
     // now get the first release by id...
     size_t id_to_fetch = r[0].id;
     gh::get_release_by_id("tipi-build", "cli", id_to_fetch, 
-      [&id_to_fetch](gh::releases::release_t&& r_by_id) {
+      [&id_to_fetch](const gh::releases::release_t& r_by_id) {
         assertm(r_by_id.id == id_to_fetch, "Testing gh::get_release_by_id(): IDs did not match unexpectedly");
       });
 
     // test get_release_asset_info
-    size_t asset_id_to_fetch = r[0].assets[0].id;
+    // select a release that has any asset:
+    auto release_it = std::find_if(r.begin(), r.end(), [](const auto& release) {  return release.assets.size() > 0; });
+    size_t asset_id_to_fetch = release_it->assets[0].id;
 
     gh::get_release_asset_info("tipi-build", "cli", asset_id_to_fetch,
       [&asset_id_to_fetch](gh::releases::asset_t&& asset_by_id) {
         assertm(asset_by_id.id == asset_id_to_fetch, "Testing gh::get_release_asset_info(): IDs did not match unexpectedly");
-      });
+      });  
 
   });
 
@@ -52,14 +55,35 @@ int main(int argc, char** argv) {
     std::cout << pre::json::to_json(r).dump(2) << std::endl;
   });
 
-  gh::get_release_by_tag("tipi-build","cli","v0.0.19", [](gh::releases::release_t&& r) {
-    std::cout << pre::json::to_json(r).dump(2) << std::endl;
-  });
+  
+  auto auth = test_utils::get_auth();
 
-  gh::auth auth{ 
-    std::getenv("GH_USER"),
-    std::getenv("GH_PASS")
-  };
+  gh::get_release_by_tag("tipi-build","cli","v0.0.19", [&](const gh::releases::release_t& r) {
+    std::cout << pre::json::to_json(r).dump(2) << std::endl;
+  }, auth);
+
+  gh::get_release_by_tag("nxxm", "gh", "test-20240228-release-asset-pagination", [&](gh::releases::release_t&& r) {
+    assertm(r.assets.size() > gh::detail::pagination::DEFAULT_PAGE_SIZE, "That release needs to have more than gh::DEFAULT_PAGE_SIZE assets");
+
+    gh::get_release_assets(r, [&](const gh::releases::assets_t& all_assets, size_t pages_queried) { 
+        assertm(pages_queried > 1, "We should have queried more than one page");
+      }, 
+      false /* just make should work even if we don't force_get */,
+      auth
+    );
+
+    gh::get_release_assets_by_release_id(
+      "nxxm", "gh", r.id, 
+      [&](gh::releases::assets_t&& all_assets, size_t pages_queried) { 
+        assertm(pages_queried > 1, "We have to have queried more than one page given the previous assertion passed");
+      },
+      auth
+    );
+
+  }, auth);
+   
+
+  
 
   gh::get_latest_release("tipi-build","cli", [](gh::releases::release_t&& r) {
     std::cout << pre::json::to_json(r).dump(2) << std::endl;

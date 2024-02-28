@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     container: 
       image: tipibuild/tipi-ubuntu
-      options: --user 1000:1000
+      options: --user root
     env:
       GH_USER: nxxmgh
       GH_PASS: ${{ secrets.USER_PAT_NXXMGH_TOKEN_FOR_GH }}

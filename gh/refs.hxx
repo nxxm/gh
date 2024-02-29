@@ -93,7 +93,7 @@ namespace gh {
     auto response_handler = [&](auto&& resp) {
       // sometimes, on very large repositories like GRPC, github.com seems to struggle,
       // but it's able to respond the query in two slices by looking up refs and then heads separately
-      if(resp.status_code == 502 && filter == filter_refs::ALL) {
+      if((resp.status_code == 502 || resp.status_code == 504) && filter == filter_refs::ALL) {
 
         git_data::refs manual_aggregation{};
 
@@ -113,7 +113,7 @@ namespace gh {
         result_handler(pre::json::from_json<git_data::refs>(resp.text));
       } else {
         throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
-            + std::to_string(resp.status_code) + " accessing : "s + url );
+            + std::to_string(resp.status_code) + " accessing : "s + url + " --- " + resp.text);
       }
     };
 

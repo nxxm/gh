@@ -454,9 +454,8 @@ namespace gh {
           do_request(next_page.value());
         }
         else {
-          result_handler({all_releases.begin(), all_releases.end()});
+          result_handler(std::move(all_releases));
         }
-
         
       } else {
         throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 

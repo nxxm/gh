@@ -44,6 +44,8 @@ BOOST_FUSION_ADAPT_STRUCT(gh::repos::branch_t, name, commit, protection_url, is_
 
 namespace gh {
 
+  using namespace std::string_literals;
+
   /**
    * \brief list github branches, passing them to the result_handler as std::vector<branch_t>.
    *        See https://developer.github.com/v3/repos/branches/#list-branches 
@@ -54,7 +56,8 @@ namespace gh {
    * \param result_handler Callable with signature : `func(std::vector<branch_t>)`
    */
   inline void list_branches(std::string owner, std::string repos, std::function<void(repos::branches&&)>&& result_handler,
-    std::optional<auth> auth = std::nullopt) {
+    std::optional<auth> auth = std::nullopt,
+    const std::string& api_endpoint = "https://api.github.com"s) {
 
     using namespace xxhr;
     std::function<void(xxhr::Response&&)> response_handler;
@@ -94,14 +97,14 @@ namespace gh {
           do_request(next_page.value());
         }
         else {
-          result_handler({all_branches.begin(), all_branches.end()});
+          result_handler(std::move(all_branches));
         }
       } else {
         throw std::runtime_error(resp.url + " failed with error: " + std::string(resp.error) + " - " + resp.text);
       }
     };
 
-    auto url = "https://api.github.com/repos/"s + owner + "/" + repos + "/branches?" + gh::detail::pagination::get_per_page_query_string();
+    auto url = api_endpoint + "/repos/" + owner + "/" + repos + "/branches?" + gh::detail::pagination::get_per_page_query_string();
     do_request(url);
   }
 }

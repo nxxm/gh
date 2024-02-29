@@ -142,7 +142,7 @@ namespace gh {
           do_request(next_page.value(), xxhr::Parameters{});
         }
         else {
-          result_handler({all_results.begin(), all_results.end()});
+          result_handler(std::move(all_results));
         }
       } else {
         throw std::runtime_error(resp.url + " failed with error: " + std::string(resp.error));

@@ -11,8 +11,6 @@ jobs:
     env:
       GH_USER: nxxmgh
       GH_PASS: ${{ secrets.USER_PAT_NXXMGH_TOKEN_FOR_GH }}
-      GH_RELEASE_TEST_REPO_OWNER: tipibuild
-      GH_RELEASE_TEST_REPO_NAME: test-gh-client-release
     steps:
       - name: checkout
         uses: actions/checkout@v2

@@ -91,8 +91,8 @@ int main(int argc, char** argv) {
 
   // testing the release creation
   {
-    std::string repo_owner = std::getenv("GH_RELEASE_TEST_REPO_OWNER");
-    std::string repo_name = std::getenv("GH_RELEASE_TEST_REPO_NAME");
+    std::string repo_owner = "tipibuild";
+    std::string repo_name = "test-gh-client-release";
 
     std::stringstream release_tag_ss; 
     release_tag_ss << "test-" << std::time(0);

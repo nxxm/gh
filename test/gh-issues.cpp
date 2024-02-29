@@ -3,6 +3,7 @@
 
 #include <cstdlib>
 #include <pre/json/to_json.hpp>
+#include "utils.hpp"
 
 int main(int argc, char** argv) {
   gh::list_issues("nxxm", "nxxm", [](gh::repos::issues&& issues) {
@@ -15,20 +16,17 @@ int main(int argc, char** argv) {
     std::cout << pre::json::to_json(issue).dump(2) << std::endl;
   });
 
-  gh::auth auth{ 
-    std::getenv("GH_USER"),
-    std::getenv("GH_PASS")
-  };
+  auto auth = test_utils::get_auth();
+
 
   gh::get_issue("daminetreg", "lib-tftp-server", 1, [](gh::repos::issue_t&& issue) {
     std::cout << pre::json::to_json(issue).dump(2) << std::endl;
   }, auth);
 
-  gh::list_issues("cpp-pre", "json", [](gh::repos::issues&& issues) {
-    for (auto issue : issues) { 
-      std::cout << pre::json::to_json(issue).dump(2) << std::endl;
-    }
-  },"all", auth);
+  // making sure paging works
+  gh::list_issues("boostorg", "process", [](gh::repos::issues&& issues) {
+    assertm(issues.size() > 100, "Expecting at least 100 issues there (confirms we queried multiple pages)");
+  }, "all", auth);
 
   return 0;
 }

@@ -12,6 +12,7 @@
 
 #include <gh/owner.hxx>
 #include <gh/auth.hxx>
+#include <gh/pagination.hxx>
 
 namespace gh::repos {
 
@@ -67,7 +68,7 @@ namespace gh::repos {
     uint64_t number;
     std::string state;
     std::string title;
-    std::string body;
+    std::optional<std::string> body;
     owner_t user;
 
     std::vector<label_t> labels;
@@ -123,31 +124,40 @@ namespace gh {
     const std::string& api_endpoint = "https://api.github.com"s ) {
 
     using namespace xxhr;
-    auto url = api_endpoint + "/repos/"s + owner + "/" + repository + "/issues";
+    std::function<void(xxhr::Response&&)> response_handler;
+    repos::issues all_issues;
 
-    auto response_handler = [&](auto&& resp) {
+    auto do_request = [&](std::string url) {
+      if (auth) {
+        GET(url,
+          Authentication{auth->user, auth->pass},
+          on_response = response_handler);
+      } else {
+        GET(url, on_response = response_handler);
+      }
+    };   
+
+    response_handler = [&](auto&& resp) {
       if ( (!resp.error) && (resp.status_code == 200) ) {
-        result_handler(pre::json::from_json<repos::issues>(resp.text));
+        auto page = pre::json::from_json<repos::issues>(resp.text);
+        all_issues.insert(all_issues.end(), page.begin(), page.end());
+
+        auto next_page = gh::detail::pagination::get_next_page_url(resp);
+        
+        if(next_page) {
+          do_request(next_page.value());
+        }
+        else {
+          result_handler(std::move(all_issues));
+        }
       } else {
         throw std::runtime_error( "err : "s + std::string(resp.error) + "status: "s 
-            + std::to_string(resp.status_code) + " accessing : "s + url );
+            + std::to_string(resp.status_code) + " accessing : "s + resp.url );
       }
     };
 
-
-    if (auth) {
-      GET(url,
-        Parameters{{"state", state}},
-        Authentication{auth->user, auth->pass},
-        on_response = response_handler);
-    } else {
-      GET(url,
-        Parameters{{"state", state}},
-        on_response = response_handler);
-    }
-
-
-
+    auto url = api_endpoint + "/repos/"s + owner + "/" + repository + "/issues?state=" + state + "&" + gh::detail::pagination::get_per_page_query_string();
+    do_request(url);
   }
 
   inline void get_issue(std::string owner, std::string repository, uint64_t issue_number,

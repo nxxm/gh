@@ -14,10 +14,7 @@ int main(int argc, char** argv) {
     std::cout << pre::json::to_json(r).dump(2) << std::endl;
   });
 
-  gh::auth auth{ 
-    std::getenv("GH_USER"),
-    std::getenv("GH_PASS")
-  };
+  auto auth = test_utils::get_auth();
 
   gh::repos_get("cpp-pre", "json", [](gh::repos::repository_t&& r) {
     std::cout << pre::json::to_json(r).dump(2) << std::endl;
